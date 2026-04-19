@@ -1,0 +1,100 @@
+const db = require('../../database');
+require('dotenv').config();
+
+async function handle(sock, jid, phone, user, sessions) {
+  sessions[phone] = { command: 'deposit', step: 'ask_amount' };
+
+  await sock.sendMessage(jid, {
+    text:
+      `💰 *Deposit*\n` +
+      `━━━━━━━━━━━━━━━━━━\n\n` +
+      `Kitna deposit karna hai?\n\n` +
+      `• Minimum: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
+      `• Maximum: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
+      `_Sirf amount likho, jaise: 500_`
+  });
+}
+
+async function handleStep(sock, jid, phone, user, text, sessions) {
+  const session = sessions[phone];
+
+  // Step 1 — Amount
+  if (session.step === 'ask_amount') {
+    const amount = parseFloat(text);
+    const MIN = parseFloat(process.env.MIN_DEPOSIT || 100);
+    const MAX = parseFloat(process.env.MAX_DEPOSIT || 50000);
+
+    if (isNaN(amount) || amount < MIN || amount > MAX) {
+      await sock.sendMessage(jid, {
+        text: `❌ Amount Rs. ${MIN} se Rs. ${MAX} ke beech hona chahiye.`
+      });
+      return;
+    }
+
+    sessions[phone].amount = amount;
+    sessions[phone].step   = 'awaiting_payment';
+
+    // Deposit record banao
+    await db.query(
+      `INSERT INTO deposits (user_id, amount, status, created_at)
+       VALUES (?, ?, 'pending', NOW())`,
+      [user.id, amount]
+    );
+
+    const adminUPI  = process.env.ADMIN_UPI  || 'admin@upi';
+    const adminName = process.env.ADMIN_NAME || 'Betting Admin';
+
+    await sock.sendMessage(jid, {
+      text:
+        `✅ *Rs. ${amount} deposit karo yahan:*\n` +
+        `━━━━━━━━━━━━━━━━━━\n\n` +
+        `📱 UPI ID: *${adminUPI}*\n` +
+        `👤 Name: *${adminName}*\n` +
+        `💰 Amount: *Rs. ${amount}*\n\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `⚠️ *Payment ke baad:*\n` +
+        `Screenshot WhatsApp par bhejo\n` +
+        `_Amount auto add ho jayega!_\n\n` +
+        `⏳ Validity: 30 minutes`
+    });
+
+    // Session update — screenshot ka wait
+    sessions[phone] = {
+      command: 'deposit',
+      step: 'awaiting_screenshot',
+      depositAmount: amount
+    };
+
+    return;
+  }
+
+  // Step 2 — UTR manually diya (screenshot nahi bheja)
+  if (session.step === 'awaiting_screenshot') {
+    // Agar text mein UTR jaisa number hai
+    if (/^[0-9]{10,22}$/.test(text) || /^[A-Z0-9]{10,22}$/.test(text)) {
+      await sock.sendMessage(jid, {
+        text:
+          `🔍 UTR *${text}* check ho raha hai...\n` +
+          `_Thoda wait karo_`
+      });
+
+      const { verifyAndCredit } = require('../api/services/verification');
+      await verifyAndCredit(
+        { utr: text, amount: session.depositAmount },
+        'manual',
+        phone,
+        sock
+      );
+
+      delete sessions[phone];
+    } else {
+      await sock.sendMessage(jid, {
+        text:
+          `📷 Screenshot bhejo ya UTR number type karo.\n\n` +
+          `_UTR 10-22 digit ka number hota hai_`
+      });
+    }
+  }
+}
+
+module.exports = { handle, handleStep };
