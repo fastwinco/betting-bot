@@ -1,2 +1,2 @@
-# betting-bot
-WhatsApp Betting Bot
+# fastwin
+FastWin - WhatsApp Betting Bot
