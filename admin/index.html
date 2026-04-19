@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Betting Bot Admin</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; background:#0f172a; color:#e2e8f0; }
+
+/* SIDEBAR */
+.sidebar {
+  width:220px; background:#1e293b; height:100vh;
+  position:fixed; padding:0; overflow-y:auto;
+}
+.sidebar-brand {
+  padding:20px; background:#6366f1;
+  font-size:18px; font-weight:bold; color:white;
+}
+.sidebar a {
+  display:block; padding:14px 20px; color:#94a3b8;
+  text-decoration:none; border-left:3px solid transparent;
+  cursor:pointer;
+}
+.sidebar a:hover, .sidebar a.active {
+  background:#334155; color:#fff;
+  border-left-color:#6366f1;
+}
+
+/* MAIN */
+.main { margin-left:220px; padding:24px; min-height:100vh; }
+.page { display:none; }
+.page.active { display:block; }
+h1 { font-size:22px; margin-bottom:20px; color:#f1f5f9; }
+
+/* CARDS */
+.cards {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:16px; margin-bottom:24px;
+}
+.card {
+  background:#1e293b; border-radius:12px;
+  padding:20px; border-left:4px solid;
+}
+.card.blue  { border-color:#3b82f6; }
+.card.green { border-color:#22c55e; }
+.card.yellow{ border-color:#eab308; }
+.card.red   { border-color:#ef4444; }
+.card.purple{ border-color:#a855f7; }
+.card h3 { color:#64748b; font-size:12px; margin-bottom:8px; text-transform:uppercase; }
+.card .val { font-size:28px; font-weight:bold; }
+.card.blue   .val { color:#3b82f6; }
+.card.green  .val { color:#22c55e; }
+.card.yellow .val { color:#eab308; }
+.card.red    .val { color:#ef4444; }
+.card.purple .val { color:#a855f7; }
+
+/* TABLE */
+.table-wrap { background:#1e293b; border-radius:12px; overflow:hidden; margin-bottom:24px; }
+.table-wrap h2 { padding:16px 20px; font-size:15px; border-bottom:1px solid #334155; }
+table { width:100%; border-collapse:collapse; }
+th { background:#334155; padding:12px 16px; text-align:left; font-size:12px; color:#94a3b8; text-transform:uppercase; }
+td { padding:12px 16px; border-bottom:1px solid #1e293b; font-size:14px; }
+tr:hover td { background:#334155; }
+
+/* BADGE */
+.badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:bold; }
+.badge.pending  { background:#78350f; color:#fde68a; }
+.badge.approved { background:#14532d; color:#86efac; }
+.badge.rejected { background:#7f1d1d; color:#fca5a5; }
+.badge.paid     { background:#14532d; color:#86efac; }
+.badge.open     { background:#14532d; color:#86efac; }
+.badge.closed   { background:#1e3a5f; color:#93c5fd; }
+.badge.resulted { background:#581c87; color:#d8b4fe; }
+
+/* BUTTONS */
+.btn { padding:6px 14px; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold; }
+.btn-green  { background:#22c55e; color:#000; }
+.btn-red    { background:#ef4444; color:#fff; }
+.btn-blue   { background:#3b82f6; color:#fff; }
+.btn-yellow { background:#eab308; color:#000; }
+.btn-purple { background:#a855f7; color:#fff; }
+.btn + .btn { margin-left:6px; }
+
+/* LOGIN */
+#loginPage {
+  position:fixed; inset:0; background:#0f172a;
+  display:flex; align-items:center; justify-content:center; z-index:999;
+}
+.login-box {
+  background:#1e293b; padding:40px; border-radius:16px;
+  width:360px; text-align:center;
+}
+.login-box h2 { margin-bottom:24px; font-size:24px; color:#6366f1; }
+.login-box input {
+  width:100%; padding:12px 16px; margin-bottom:14px;
+  background:#334155; border:1px solid #475569; border-radius:8px;
+  color:#fff; font-size:14px; outline:none;
+}
+.login-box button {
+  width:100%; padding:13px; background:#6366f1;
+  border:none; border-radius:8px; color:#fff;
+  font-size:15px; font-weight:bold; cursor:pointer;
+}
+.login-box .err { color:#f87171; font-size:13px; margin-top:10px; }
+
+/* FORM */
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-group label { font-size:12px; color:#94a3b8; }
+.form-group input, .form-group select {
+  padding:10px 14px; background:#334155;
+  border:1px solid #475569; border-radius:8px;
+  color:#fff; font-size:14px; outline:none;
+}
+.form-actions { margin-top:16px; }
+
+/* RESULT FORM */
+.result-box {
+  background:#1e293b; border-radius:12px;
+  padding:24px; margin-bottom:24px;
+}
+.result-box h2 { margin-bottom:16px; font-size:16px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+  <div class="login-box">
+    <h2>🎯 Admin Login</h2>
+    <input type="text"     id="loginUser" placeholder="Username">
+    <input type="password" id="loginPass" placeholder="Password">
+    <button onclick="doLogin()">Login</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-brand">🎯 Betting Admin</div>
+  <a onclick="showPage('dashboard')"   class="active">📊 Dashboard</a>
+  <a onclick="showPage('deposits')">   💰 Deposits</a>
+  <a onclick="showPage('withdrawals')">🏧 Withdrawals</a>
+  <a onclick="showPage('markets')">    🕐 Markets</a>
+  <a onclick="showPage('results')">    🎲 Results</a>
+  <a onclick="showPage('users')">      👥 Users</a>
+  <a onclick="doLogout()" style="margin-top:20px;color:#ef4444">🚪 Logout</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="page active">
+    <h1>📊 Dashboard</h1>
+    <div class="cards">
+      <div class="card blue">
+        <h3>Total Users</h3>
+        <div class="val" id="statUsers">—</div>
+      </div>
+      <div class="card green">
+        <h3>Today Deposit</h3>
+        <div class="val" id="statDeposit">—</div>
+      </div>
+      <div class="card yellow">
+        <h3>Today Bets</h3>
+        <div class="val" id="statBets">—</div>
+      </div>
+      <div class="card red">
+        <h3>Pending Withdraw</h3>
+        <div class="val" id="statWithdraw">—</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <h2>⏳ Pending Deposits</h2>
+      <table>
+        <thead><tr>
+          <th>User</th><th>Amount</th><th>Source</th><th>Time</th><th>Action</th>
+        </tr></thead>
+        <tbody id="dashDeposits"><tr><td colspan="5" style="text-align:center;color:#64748b;padding:20px">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap">
+      <h2>⏳ Pending Withdrawals</h2>
+      <table>
+        <thead><tr>
+          <th>User</th><th>Amount</th><th>UPI</th><th>Time</th><th>Action</th>
+        </tr></thead>
+        <tbody id="dashWithdrawals"><tr><td colspan="5" style="text-align:center;color:#64748b;padding:20px">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DEPOSITS -->
+  <div id="deposits" class="page">
+    <h1>💰 Deposits</h1>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>User</th><th>Amount</th><th>UTR</th><th>Source</th><th>Status</th><th>Time</th><th>Action</th>
+        </tr></thead>
+        <tbody id="depositsTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WITHDRAWALS -->
+  <div id="withdrawals" class="page">
+    <h1>🏧 Withdrawals</h1>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>User</th><th>Amount</th><th>UPI</th><th>UTR</th><th>Status</th><th>Time</th><th>Action</th>
+        </tr></thead>
+        <tbody id="withdrawalsTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MARKETS -->
+  <div id="markets" class="page">
+    <h1>🕐 Markets</h1>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Market</th><th>Open</th><th>Close</th><th>Result</th><th>Status</th><th>PDFs</th>
+        </tr></thead>
+        <tbody id="marketsTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="page">
+    <h1>🎲 Declare Result</h1>
+    <div class="result-box">
+      <h2>Result Enter Karo</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Market</label>
+          <select id="resultMarket"></select>
+        </div>
+        <div class="form-group">
+          <label>Open Pana (3 digit)</label>
+          <input type="text" id="openPana" placeholder="123" maxlength="3">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Close Pana (3 digit)</label>
+          <input type="text" id="closePana" placeholder="456" maxlength="3">
+        </div>
+        <div class="form-group">
+          <label>Calculated Result</label>
+          <input type="text" id="calcResult" placeholder="Auto calculate" readonly
+            style="background:#0f172a;color:#22c55e;font-weight:bold">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-green" onclick="declareResult()">
+          ✅ Result Declare Karo
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <h2>Recent Results</h2>
+      <table>
+        <thead><tr>
+          <th>Market</th><th>Open Pana</th><th>Open Single</th>
+          <th>Jodi</th><th>Close Pana</th><th>Close Single</th><th>Date</th>
+        </tr></thead>
+        <tbody id="resultsTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div id="users" class="page">
+    <h1>👥 Users</h1>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>WhatsApp</th><th>UPI</th>
+          <th>Balance</th><th>Status</th><th>Joined</th><th>Action</th>
+        </tr></thead>
+        <tbody id="usersTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '';  // Same server
+let TOKEN = localStorage.getItem('admin_token');
+
+// ── LOGIN ───────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('loginUser').value;
+  const password = document.getElementById('loginPass').value;
+  try {
+    const res  = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (data.token) {
+      TOKEN = data.token;
+      localStorage.setItem('admin_token', TOKEN);
+      document.getElementById('loginPage').style.display = 'none';
+      loadDashboard();
+    } else {
+      document.getElementById('loginErr').textContent = data.error || 'Login failed';
+    }
+  } catch (e) {
+    document.getElementById('loginErr').textContent = 'Server se connect nahi ho saka';
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('admin_token');
+  location.reload();
+}
+
+// ── PAGES ───────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  event.target.classList.add('active');
+
+  if (name === 'dashboard')   loadDashboard();
+  if (name === 'deposits')    loadDeposits();
+  if (name === 'withdrawals') loadWithdrawals();
+  if (name === 'markets')     loadMarkets();
+  if (name === 'results')     loadResults();
+  if (name === 'users')       loadUsers();
+}
+
+// ── API HELPER ──────────────────────────────────────────────────
+async function api(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${TOKEN}`,
+      'Content-Type':  'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res  = await fetch(`/api/admin${path}`, opts);
+  return res.json();
+}
+
+function fmtTime(dt) {
+  if (!dt) return '—';
+  return new Date(dt).toLocaleString('en-IN', {
+    day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
+  });
+}
+
+// ── DASHBOARD ───────────────────────────────────────────────────
+async function loadDashboard() {
+  const stats = await api('/stats');
+  document.getElementById('statUsers').textContent   = stats.totalUsers   || 0;
+  document.getElementById('statDeposit').textContent = '₹'+(stats.todayDeposit||0);
+  document.getElementById('statBets').textContent    = stats.todayBets    || 0;
+  document.getElementById('statWithdraw').textContent= stats.pendingWithdrawals||0;
+
+  // Pending deposits
+  const deps = await api('/deposits/pending');
+  const dTbl = document.getElementById('dashDeposits');
+  dTbl.innerHTML = deps.length ? deps.map(d => `
+    <tr>
+      <td><b>${d.name}</b><br><small style="color:#64748b">${d.whatsapp_number}</small></td>
+      <td style="color:#22c55e;font-weight:bold">₹${d.amount}</td>
+      <td><span class="badge ${d.source}">${d.source}</span></td>
+      <td style="color:#64748b;font-size:12px">${fmtTime(d.created_at)}</td>
+      <td>
+        <button class="btn btn-green" onclick="approveDeposit(${d.id})">✅ Approve</button>
+        <button class="btn btn-red"   onclick="rejectDeposit(${d.id})">❌ Reject</button>
+      </td>
+    </tr>`).join('')
+  : '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:20px">Koi pending deposit nahi</td></tr>';
+
+  // Pending withdrawals
+  const wds  = await api('/withdrawals/pending');
+  const wTbl = document.getElementById('dashWithdrawals');
+  wTbl.innerHTML = wds.length ? wds.map(w => `
+    <tr>
+      <td><b>${w.name}</b><br><small style="color:#64748b">${w.whatsapp_number}</small></td>
+      <td style="color:#ef4444;font-weight:bold">₹${w.amount}</td>
+      <td><code style="color:#94a3b8">${w.upi_id}</code></td>
+      <td style="color:#64748b;font-size:12px">${fmtTime(w.created_at)}</td>
+      <td>
+        <button class="btn btn-blue"   onclick="payWithdrawal(${w.id},${w.amount})">💸 Pay</button>
+        <button class="btn btn-red"    onclick="rejectWithdrawal(${w.id})">❌ Reject</button>
+      </td>
+    </tr>`).join('')
+  : '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:20px">Koi pending withdrawal nahi</td></tr>';
+}
+
+// ── DEPOSITS ────────────────────────────────────────────────────
+async function loadDeposits() {
+  const deps = await api('/deposits/pending');
+  document.getElementById('depositsTable').innerHTML = deps.map(d => `
+    <tr>
+      <td><b>${d.name}</b><br><small>${d.whatsapp_number}</small></td>
+      <td style="color:#22c55e;font-weight:bold">₹${d.amount}</td>
+      <td><code>${d.utr_number||'—'}</code></td>
+      <td><span class="badge ${d.source}">${d.source}</span></td>
+      <td><span class="badge ${d.status}">${d.status}</span></td>
+      <td style="font-size:12px;color:#64748b">${fmtTime(d.created_at)}</td>
+      <td>
+        <button class="btn btn-green" onclick="approveDeposit(${d.id})">✅</button>
+        <button class="btn btn-red"   onclick="rejectDeposit(${d.id})">❌</button>
+      </td>
+    </tr>`).join('') ||
+    '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:20px">Koi pending deposit nahi</td></tr>';
+}
+
+async function approveDeposit(id) {
+  const utr = prompt('UTR number enter karo (ya khali chhod do):');
+  await api(`/deposits/${id}/approve`, 'POST', { utr });
+  alert('✅ Deposit approved!');
+  loadDashboard();
+}
+
+async function rejectDeposit(id) {
+  const reason = prompt('Reject reason:');
+  await api(`/deposits/${id}/reject`, 'POST', { reason });
+  alert('❌ Deposit rejected!');
+  loadDashboard();
+}
+
+// ── WITHDRAWALS ─────────────────────────────────────────────────
+async function loadWithdrawals() {
+  const wds = await api('/withdrawals/pending');
+  document.getElementById('withdrawalsTable').innerHTML = wds.map(w => `
+    <tr>
+      <td><b>${w.name}</b><br><small>${w.whatsapp_number}</small></td>
+      <td style="color:#ef4444;font-weight:bold">₹${w.amount}</td>
+      <td><code>${w.upi_id}</code></td>
+      <td><code>${w.utr_number||'—'}</code></td>
+      <td><span class="badge ${w.status}">${w.status}</span></td>
+      <td style="font-size:12px;color:#64748b">${fmtTime(w.created_at)}</td>
+      <td>
+        <button class="btn btn-blue" onclick="payWithdrawal(${w.id},${w.amount})">💸 Pay</button>
+        <button class="btn btn-red"  onclick="rejectWithdrawal(${w.id})">❌</button>
+      </td>
+    </tr>`).join('') ||
+    '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:20px">Koi pending withdrawal nahi</td></tr>';
+}
+
+async function payWithdrawal(id, amount) {
+  const utr = prompt(`₹${amount} UPI se bhejo.\nPhir UTR number yahan paste karo:`);
+  if (!utr) return;
+  await api(`/withdrawals/${id}/pay`, 'POST', { utr });
+  alert('✅ Withdrawal marked as paid!');
+  loadDashboard();
+}
+
+async function rejectWithdrawal(id) {
+  const reason = prompt('Reject reason:');
+  await api(`/withdrawals/${id}/reject`, 'POST', { reason });
+  alert('❌ Withdrawal rejected. Amount wapas credit ho gaya.');
+  loadDashboard();
+}
+
+// ── MARKETS ─────────────────────────────────────────────────────
+async function loadMarkets() {
+  const markets = await api('/markets');
+  document.getElementById('marketsTable').innerHTML = markets.map(m => `
+    <tr>
+      <td><b>${m.name}</b></td>
+      <td>${m.open_time}</td>
+      <td>${m.close_time}</td>
+      <td>${m.result_time}</td>
+      <td><span class="badge ${m.status}">${m.status}</span></td>
+      <td>
+        ${m.pdf_generated
+          ? `<button class="btn btn-purple" onclick="viewPDFs(${m.id})">📄 PDFs</button>`
+          : '<small style="color:#64748b">Pending</small>'
+        }
+      </td>
+    </tr>`).join('');
+}
+
+async function viewPDFs(marketId) {
+  const pdfs = await api(`/markets/${marketId}/pdfs`);
+  if (!pdfs.length) { alert('Koi PDF nahi mili'); return; }
+  const list = pdfs.map(p => p.bet_type).join('\n');
+  alert(`PDFs ready:\n${list}\n\nAdmin panel ke pdfs folder mein hain.`);
+}
+
+// ── RESULTS ─────────────────────────────────────────────────────
+async function loadResults() {
+  const markets = await api('/markets');
+  const open    = markets.filter(m => m.status !== 'resulted' && m.status !== 'cancelled');
+
+  // Market dropdown
+  const sel = document.getElementById('resultMarket');
+  sel.innerHTML = open.map(m =>
+    `<option value="${m.id}">${m.name}</option>`
+  ).join('');
+
+  // Auto calculate
+  ['openPana','closePana'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calcJodi);
+  });
+
+  // Recent results
+  const resulted = markets.filter(m => m.status === 'resulted');
+  document.getElementById('resultsTable').innerHTML = resulted.map(m => `
+    <tr>
+      <td><b>${m.name}</b></td>
+      <td>${m.result_open_pana  || '—'}</td>
+      <td>${digitSum(m.result_open_pana)}</td>
+      <td><b style="color:#eab308">${m.result_jodi || '—'}</b></td>
+      <td>${m.result_close_pana || '—'}</td>
+      <td>${digitSum(m.result_close_pana)}</td>
+      <td style="font-size:12px;color:#64748b">${fmtTime(m.resulted_at)}</td>
+    </tr>`).join('') ||
+    '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:20px">Koi result nahi</td></tr>';
+}
+
+function calcJodi() {
+  const op = document.getElementById('openPana').value;
+  const cp = document.getElementById('closePana').value;
+  if (op.length === 3 && cp.length === 3) {
+    const os = digitSum(op);
+    const cs = digitSum(cp);
+    document.getElementById('calcResult').value =
+      `Open: ${os} | Jodi: ${os}${cs} | Close: ${cs}`;
+  }
+}
+
+async function declareResult() {
+  const marketId = document.getElementById('resultMarket').value;
+  const openPana = document.getElementById('openPana').value;
+  const closePana= document.getElementById('closePana').value;
+
+  if (!marketId) { alert('Market select karo'); return; }
+  if (openPana.length  !== 3) { alert('Open Pana 3 digit hona chahiye'); return; }
+  if (closePana.length !== 3) { alert('Close Pana 3 digit hona chahiye'); return; }
+
+  if (!confirm(`Result declare karna chahte ho?\nOpen: ${openPana}\nClose: ${closePana}`)) return;
+
+  const res = await api(`/markets/${marketId}/result`, 'POST', { openPana, closePana });
+  if (res.success) {
+    alert(
+      `✅ Result Declare!\n\n` +
+      `Open Single: ${res.openSingle}\n` +
+      `Jodi: ${res.jodi}\n` +
+      `Close Single: ${res.closeSingle}\n\n` +
+      `Winners: ${res.summary?.totalWinners || 0}\n` +
+      `Payout: ₹${res.summary?.totalPayout || 0}`
+    );
+    loadResults();
+  } else {
+    alert('Error: ' + res.error);
+  }
+}
+
+// ── USERS ───────────────────────────────────────────────────────
+async function loadUsers() {
+  const users = await api('/users');
+  document.getElementById('usersTable').innerHTML = users.map(u => `
+    <tr>
+      <td><b>${u.name}</b></td>
+      <td>${u.whatsapp_number}</td>
+      <td><small>${u.upi_id||'—'}</small></td>
+      <td style="color:#22c55e;font-weight:bold">₹${u.wallet_balance}</td>
+      <td><span class="badge ${u.status}">${u.status}</span></td>
+      <td style="font-size:12px;color:#64748b">${fmtTime(u.registered_at)}</td>
+      <td>
+        ${u.status === 'active'
+          ? `<button class="btn btn-red" onclick="blockUser(${u.id},'block')">🚫 Block</button>`
+          : `<button class="btn btn-green" onclick="blockUser(${u.id},'unblock')">✅ Unblock</button>`
+        }
+      </td>
+    </tr>`).join('');
+}
+
+async function blockUser(id, action) {
+  if (!confirm(`User ko ${action} karna chahte ho?`)) return;
+  await api(`/users/${id}/block`, 'POST', { action });
+  loadUsers();
+}
+
+// ── HELPER ──────────────────────────────────────────────────────
+function digitSum(pana) {
+  if (!pana || pana.length < 3) return '—';
+  return pana.split('').reduce((a,b) => a + parseInt(b), 0) % 10;
+}
+
+// ── INIT ────────────────────────────────────────────────────────
+if (TOKEN) {
+  document.getElementById('loginPage').style.display = 'none';
+  loadDashboard();
+}
+
+// Auto refresh every 30 seconds
+setInterval(() => {
+  const active = document.querySelector('.page.active');
+  if (active?.id === 'dashboard') loadDashboard();
+}, 30000);
+</script>
+</body>
+</html>
