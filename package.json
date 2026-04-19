@@ -19,7 +19,7 @@
     "pino": "^8.16.2",
     "pino-pretty": "^10.3.1",
     "qrcode-terminal": "^0.12.0",
-    "sharp": "^0.33.0",
+    "sharp": "^0.32.6",
     "tesseract.js": "^5.0.3",
     "node-cron": "^3.0.3",
     "jsonwebtoken": "^9.0.2",
