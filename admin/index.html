@@ -1,1005 +1,426 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Betting Admin</title>
+<title>FastWin Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#0f172a;--sidebar:#1e293b;--card:#1e293b;--border:#334155;
-  --text:#e2e8f0;--muted:#64748b;--primary:#6366f1;--green:#22c55e;
-  --red:#ef4444;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;
-  --orange:#f97316;
-}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
-  background:var(--bg);color:var(--text);min-height:100vh}
-
-/* ── MOBILE BOTTOM NAV ── */
-.bottom-nav{
-  display:none;position:fixed;bottom:0;left:0;right:0;
-  background:var(--sidebar);border-top:1px solid var(--border);
-  z-index:100;padding:8px 0 12px;
-}
-.bottom-nav a{
-  flex:1;display:flex;flex-direction:column;align-items:center;
-  color:var(--muted);font-size:10px;gap:4px;cursor:pointer;
-  text-decoration:none;padding:4px;
-}
-.bottom-nav a.active{color:var(--primary)}
-.bottom-nav a span{font-size:20px}
-
-/* ── PC SIDEBAR ── */
-.sidebar{
-  width:240px;background:var(--sidebar);height:100vh;
-  position:fixed;left:0;top:0;overflow-y:auto;
-  border-right:1px solid var(--border);z-index:50;
-}
-.brand{
-  padding:20px;background:var(--primary);
-  font-size:18px;font-weight:bold;color:#fff;
-  display:flex;align-items:center;gap:10px;
-}
-.sidebar a{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 20px;color:var(--muted);
-  text-decoration:none;cursor:pointer;font-size:14px;
-  border-left:3px solid transparent;transition:all 0.2s;
-}
-.sidebar a:hover,.sidebar a.active{
-  background:#334155;color:#fff;border-left-color:var(--primary);
-}
-.sidebar .divider{
-  padding:8px 20px 4px;font-size:11px;
-  color:var(--muted);text-transform:uppercase;letter-spacing:1px;
-}
-
-/* ── MAIN ── */
-.main{margin-left:240px;padding:24px;min-height:100vh;padding-bottom:40px}
-.page{display:none}.page.active{display:block}
-
-/* ── TOPBAR ── */
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:24px;
-}
-.topbar h1{font-size:22px;font-weight:bold}
-.topbar .badge{
-  background:var(--primary);color:#fff;
-  padding:6px 14px;border-radius:20px;font-size:12px;
-}
-
-/* ── CARDS ── */
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.card{
-  background:var(--card);border-radius:14px;padding:20px;
-  border-left:4px solid;position:relative;overflow:hidden;
-}
-.card::after{
-  content:'';position:absolute;right:-10px;top:-10px;
-  width:60px;height:60px;border-radius:50%;opacity:0.1;
-}
-.card.blue{border-color:var(--blue)}.card.blue::after{background:var(--blue)}
-.card.green{border-color:var(--green)}.card.green::after{background:var(--green)}
-.card.yellow{border-color:var(--yellow)}.card.yellow::after{background:var(--yellow)}
-.card.red{border-color:var(--red)}.card.red::after{background:var(--red)}
-.card.purple{border-color:var(--purple)}.card.purple::after{background:var(--purple)}
-.card.orange{border-color:var(--orange)}.card.orange::after{background:var(--orange)}
-.card h3{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-.card .val{font-size:26px;font-weight:bold}
-.card.blue .val{color:var(--blue)}
-.card.green .val{color:var(--green)}
-.card.yellow .val{color:var(--yellow)}
-.card.red .val{color:var(--red)}
-.card.purple .val{color:var(--purple)}
-.card.orange .val{color:var(--orange)}
-.card .sub{font-size:12px;color:var(--muted);margin-top:4px}
-
-/* ── TABLE ── */
-.tbl-wrap{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:20px}
-.tbl-head{
-  padding:16px 20px;display:flex;align-items:center;
-  justify-content:space-between;border-bottom:1px solid var(--border);
-}
-.tbl-head h2{font-size:15px;font-weight:600}
-table{width:100%;border-collapse:collapse}
-th{
-  background:#334155;padding:11px 16px;text-align:left;
-  font-size:11px;color:var(--muted);text-transform:uppercase;
-  white-space:nowrap;
-}
-td{padding:12px 16px;border-bottom:1px solid #1a2744;font-size:13px;white-space:nowrap}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#1a2744}
-
-/* ── BADGES ── */
-.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.badge.pending{background:#78350f;color:#fde68a}
-.badge.approved,.badge.active,.badge.paid,.badge.open{background:#14532d;color:#86efac}
-.badge.rejected,.badge.blocked{background:#7f1d1d;color:#fca5a5}
-.badge.resulted{background:#581c87;color:#d8b4fe}
-.badge.closed{background:#1e3a5f;color:#93c5fd}
-.badge.sms{background:#164e63;color:#67e8f9}
-.badge.screenshot{background:#3b1f6e;color:#c4b5fd}
-.badge.manual{background:#1e293b;color:#94a3b8;border:1px solid #334155}
-
-/* ── BUTTONS ── */
-.btn{
-  padding:8px 16px;border:none;border-radius:8px;
-  cursor:pointer;font-size:13px;font-weight:600;
-  transition:opacity 0.2s;display:inline-flex;align-items:center;gap:6px;
-}
-.btn:hover{opacity:0.85}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-green{background:var(--green);color:#000}
-.btn-red{background:var(--red);color:#fff}
-.btn-blue{background:var(--blue);color:#fff}
-.btn-yellow{background:var(--yellow);color:#000}
-.btn-purple{background:var(--purple);color:#fff}
-.btn-orange{background:var(--orange);color:#fff}
-.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
-.btn-sm{padding:5px 10px;font-size:12px}
-.btn+.btn{margin-left:6px}
-
-/* ── MODAL ── */
-.modal-overlay{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
-  z-index:200;align-items:center;justify-content:center;padding:16px;
-}
-.modal-overlay.open{display:flex}
-.modal{
-  background:var(--sidebar);border-radius:16px;padding:24px;
-  width:100%;max-width:480px;max-height:90vh;overflow-y:auto;
-}
-.modal h2{font-size:18px;margin-bottom:20px;font-weight:700}
-.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
-
-/* ── FORM ── */
-.form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
-.form-group input,.form-group select,.form-group textarea{
-  width:100%;padding:11px 14px;background:#0f172a;
-  border:1px solid var(--border);border-radius:8px;
-  color:var(--text);font-size:14px;outline:none;
-  transition:border-color 0.2s;
-}
-.form-group input:focus,.form-group select:focus{border-color:var(--primary)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-
-/* ── LOGIN ── */
-#loginPage{
-  position:fixed;inset:0;background:var(--bg);
-  display:flex;align-items:center;justify-content:center;z-index:999;
-}
-.login-box{
-  background:var(--card);padding:40px;border-radius:20px;
-  width:100%;max-width:380px;text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);
-}
-.login-logo{font-size:48px;margin-bottom:8px}
-.login-box h2{font-size:22px;margin-bottom:6px;color:var(--primary)}
-.login-box p{color:var(--muted);font-size:13px;margin-bottom:24px}
-.login-box input{
-  width:100%;padding:13px 16px;margin-bottom:12px;
-  background:#0f172a;border:1px solid var(--border);
-  border-radius:10px;color:var(--text);font-size:15px;outline:none;
-}
-.login-box button{
-  width:100%;padding:14px;background:var(--primary);
-  border:none;border-radius:10px;color:#fff;
-  font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;
-}
-.login-err{color:var(--red);font-size:13px;margin-top:10px;min-height:20px}
-
-/* ── SETTINGS CARD ── */
-.settings-section{
-  background:var(--card);border-radius:14px;
-  padding:20px;margin-bottom:20px;
-}
-.settings-section h3{font-size:15px;font-weight:600;margin-bottom:16px;
-  padding-bottom:12px;border-bottom:1px solid var(--border)}
-
-/* ── ALERT ── */
-.alert{
-  padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;
-}
-.alert.success{background:#14532d;color:#86efac}
-.alert.error{background:#7f1d1d;color:#fca5a5}
-
-/* ── RESPONSIVE MOBILE ── */
+:root{--bg:#0a0f1e;--bg2:#111827;--bg3:#1f2937;--border:#2d3748;--text:#f1f5f9;--text2:#94a3b8;--accent:#f59e0b;--accent2:#fbbf24;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;--orange:#f97316;--card:#111827;--sidebar:#0d1117;--radius:12px;}
+[data-theme="light"]{--bg:#f0f4ff;--bg2:#ffffff;--bg3:#e8edf5;--border:#d1d9e6;--text:#1a202c;--text2:#4a5568;--card:#ffffff;--sidebar:#1a1f35;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;}
+.sidebar{width:240px;background:var(--sidebar);height:100vh;position:fixed;left:0;top:0;display:flex;flex-direction:column;border-right:1px solid rgba(245,158,11,0.2);z-index:100;transition:transform .3s;}
+.brand{padding:20px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;gap:10px;}
+.brand-icon{font-size:28px;}
+.brand-text{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#000;letter-spacing:1px;}
+.brand-sub{font-size:10px;color:rgba(0,0,0,0.6);font-weight:500;letter-spacing:2px;text-transform:uppercase;}
+.nav{flex:1;padding:12px 0;overflow-y:auto;}
+.nav-section{padding:8px 16px 4px;font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .2s;border-left:3px solid transparent;}
+.nav-item:hover{background:rgba(245,158,11,0.08);color:var(--text);}
+.nav-item.active{background:rgba(245,158,11,0.12);color:var(--accent);border-left-color:var(--accent);}
+.nav-item .icon{font-size:18px;width:22px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);}
+.main{margin-left:240px;min-height:100vh;}
+.topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}
+.topbar-actions{display:flex;align-items:center;gap:10px;}
+.icon-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+.hamburger{display:none;}
+.page{display:none;padding:24px;}
+.page.active{display:block;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.gold::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.stat-card.green::before{background:linear-gradient(90deg,var(--green),#34d399);}
+.stat-card.red::before{background:linear-gradient(90deg,var(--red),#f87171);}
+.stat-card.blue::before{background:linear-gradient(90deg,var(--blue),#60a5fa);}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px;}
+.stat-val{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;line-height:1;}
+.stat-card.gold .stat-val{color:var(--accent);}
+.stat-card.green .stat-val{color:var(--green);}
+.stat-card.red .stat-val{color:var(--red);}
+.stat-card.blue .stat-val{color:var(--blue);}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:4px;}
+.stat-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:36px;opacity:.1;}
+.table-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:20px;}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.table-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;}
+table{width:100%;border-collapse:collapse;}
+th{padding:11px 16px;text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;background:var(--bg3);}
+td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(245,158,11,0.03);}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block;}
+.badge-pending{background:rgba(245,158,11,0.15);color:var(--accent);}
+.badge-approved,.badge-paid,.badge-active,.badge-won{background:rgba(16,185,129,0.15);color:var(--green);}
+.badge-rejected,.badge-blocked,.badge-lost{background:rgba(239,68,68,0.15);color:var(--red);}
+.badge-open{background:rgba(16,185,129,0.15);color:var(--green);}
+.badge-closed{background:rgba(59,130,246,0.15);color:var(--blue);}
+.badge-resulted{background:rgba(139,92,246,0.15);color:var(--purple);}
+.badge-sms{background:rgba(16,185,129,0.15);color:var(--green);}
+.badge-screenshot{background:rgba(59,130,246,0.15);color:var(--blue);}
+.badge-manual{background:rgba(245,158,11,0.15);color:var(--accent);}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{opacity:.85;transform:translateY(-1px);}
+.btn-primary{background:var(--accent);color:#000;}
+.btn-green{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);}
+.btn-red{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);}
+.btn-blue{background:rgba(59,130,246,0.15);color:var(--blue);border:1px solid rgba(59,130,246,0.3);}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn+.btn{margin-left:4px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.form-group input,.form-group select{padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:border .2s;}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent);}
+.form-actions{margin-top:20px;display:flex;gap:10px;}
+.section-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:24px;margin-bottom:20px;}
+.section-title{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;color:var(--accent);}
+#loginPage{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;}
+.login-wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;padding:24px;}
+.login-brand{text-align:center;margin-bottom:32px;}
+.login-brand-icon{font-size:48px;margin-bottom:8px;}
+.login-brand-name{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:var(--accent);letter-spacing:2px;}
+.login-brand-sub{font-size:12px;color:var(--text2);letter-spacing:3px;text-transform:uppercase;}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;}
+.login-card h2{font-size:20px;font-weight:600;margin-bottom:24px;text-align:center;}
+.login-card input{width:100%;padding:13px 16px;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;outline:none;}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;}
+.login-err{color:var(--red);font-size:13px;margin-top:12px;text-align:center;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px;color:var(--accent);}
+.modal-close{float:right;cursor:pointer;color:var(--text2);font-size:20px;}
+.toast-container{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;animation:slideIn .3s ease;min-width:250px;display:flex;align-items:center;gap:10px;}
+.toast-success{background:rgba(16,185,129,0.95);color:#fff;}
+.toast-error{background:rgba(239,68,68,0.95);color:#fff;}
+.toast-info{background:rgba(59,130,246,0.95);color:#fff;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.rate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.rate-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.rate-name{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px;text-transform:uppercase;}
+.rate-input{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-size:20px;font-family:'Rajdhani',sans-serif;font-weight:700;outline:none;text-align:center;}
+.data-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:monospace;font-size:13px;white-space:pre-wrap;max-height:300px;overflow-y:auto;}
+.pdf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.pdf-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;}
+.pdf-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.pdf-icon{font-size:32px;margin-bottom:8px;}
+.pdf-label{font-size:12px;font-weight:600;color:var(--text2);}
+.mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;display:none;}
+.mobile-overlay.open{display:block;}
 @media(max-width:768px){
-  .sidebar{display:none}
-  .main{margin-left:0;padding:16px;padding-bottom:80px}
-  .bottom-nav{display:flex}
-  .cards{grid-template-columns:repeat(2,1fr);gap:12px}
-  .card{padding:16px}
-  .card .val{font-size:22px}
-  .topbar h1{font-size:18px}
-  table{display:block;overflow-x:auto}
-  .form-row{grid-template-columns:1fr}
-  .modal{padding:20px}
-  .tbl-head{flex-direction:column;align-items:flex-start;gap:10px}
-}
-@media(max-width:480px){
-  .cards{grid-template-columns:repeat(2,1fr)}
+.sidebar{transform:translateX(-100%);width:260px;}
+.sidebar.open{transform:translateX(0);}
+.main{margin-left:0;}
+.stat-grid{grid-template-columns:repeat(2,1fr);}
+.pdf-grid{grid-template-columns:repeat(2,1fr);}
+.rate-grid{grid-template-columns:repeat(2,1fr);}
+.form-grid{grid-template-columns:1fr;}
+.hamburger{display:flex!important;}
+.page{padding:16px;}
+.topbar{padding:0 16px;}
 }
 </style>
 </head>
 <body>
-
-<!-- LOGIN -->
+<div class="toast-container" id="toastContainer"></div>
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeSidebar()"></div>
 <div id="loginPage">
-  <div class="login-box">
-    <div class="login-logo">🎯</div>
-    <h2>Betting Admin</h2>
-    <p>Admin panel mein login karo</p>
-    <input type="text" id="lu" placeholder="Username" autocomplete="username">
-    <input type="password" id="lp" placeholder="Password" autocomplete="current-password">
-    <button onclick="doLogin()">Login</button>
-    <div class="login-err" id="lerr"></div>
-  </div>
+<div class="login-wrap">
+<div class="login-brand">
+<div class="login-brand-icon">⚡</div>
+<div class="login-brand-name">FASTWIN</div>
+<div class="login-brand-sub">Admin Dashboard</div>
 </div>
-
-<!-- PC SIDEBAR -->
-<div class="sidebar">
-  <div class="brand">🎯 Betting Admin</div>
-  <div class="divider">Main</div>
-  <a onclick="nav('dashboard')" id="s-dashboard" class="active">📊 Dashboard</a>
-  <a onclick="nav('deposits')"  id="s-deposits">💰 Deposits</a>
-  <a onclick="nav('withdrawals')" id="s-withdrawals">🏧 Withdrawals</a>
-  <div class="divider">Game</div>
-  <a onclick="nav('markets')"  id="s-markets">🕐 Markets</a>
-  <a onclick="nav('results')"  id="s-results">🎲 Results</a>
-  <a onclick="nav('bets')"     id="s-bets">🎯 All Bets</a>
-  <div class="divider">Users</div>
-  <a onclick="nav('users')"    id="s-users">👥 Users</a>
-  <div class="divider">Settings</div>
-  <a onclick="nav('settings')" id="s-settings">⚙️ Settings</a>
-  <a onclick="doLogout()" style="color:var(--red);margin-top:8px">🚪 Logout</a>
+<div class="login-card">
+<h2>🔐 Secure Login</h2>
+<input type="text" id="loginUser" placeholder="Username" value="admin">
+<input type="password" id="loginPass" placeholder="Password">
+<button class="login-btn" onclick="doLogin()">LOGIN →</button>
+<div class="login-err" id="loginErr"></div>
 </div>
-
-<!-- MOBILE BOTTOM NAV -->
-<nav class="bottom-nav">
-  <a onclick="nav('dashboard')" id="m-dashboard" class="active">
-    <span>📊</span>Home
-  </a>
-  <a onclick="nav('deposits')" id="m-deposits">
-    <span>💰</span>Deposits
-  </a>
-  <a onclick="nav('withdrawals')" id="m-withdrawals">
-    <span>🏧</span>Withdraw
-  </a>
-  <a onclick="nav('markets')" id="m-markets">
-    <span>🕐</span>Markets
-  </a>
-  <a onclick="nav('results')" id="m-results">
-    <span>🎲</span>Results
-  </a>
-  <a onclick="nav('settings')" id="m-settings">
-    <span>⚙️</span>Settings
-  </a>
-</nav>
-
+</div>
+</div>
+<div class="sidebar" id="sidebar">
+<div class="brand">
+<div class="brand-icon">⚡</div>
+<div><div class="brand-text">FASTWIN</div><div class="brand-sub">Admin Panel</div></div>
+</div>
+<div class="nav">
+<div class="nav-section">Main</div>
+<div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</div>
+<div class="nav-item" onclick="showPage('deposits',this)"><span class="icon">💰</span> Deposits <span class="nav-badge" id="depBadge">0</span></div>
+<div class="nav-item" onclick="showPage('withdrawals',this)"><span class="icon">🏧</span> Withdrawals <span class="nav-badge" id="wdBadge">0</span></div>
+<div class="nav-section">Games</div>
+<div class="nav-item" onclick="showPage('markets',this)"><span class="icon">🕐</span> Markets</div>
+<div class="nav-item" onclick="showPage('results',this)"><span class="icon">🎲</span> Results</div>
+<div class="nav-item" onclick="showPage('pdfs',this)"><span class="icon">📄</span> Bet PDFs</div>
+<div class="nav-section">Management</div>
+<div class="nav-item" onclick="showPage('users',this)"><span class="icon">👥</span> Users</div>
+<div class="nav-item" onclick="showPage('rates',this)"><span class="icon">⚙️</span> Game Rates</div>
+<div class="nav-item" onclick="showPage('settings',this)"><span class="icon">🔧</span> Settings</div>
+</div>
+<div class="sidebar-footer">
+<div class="nav-item" onclick="doLogout()" style="color:var(--red)"><span class="icon">🚪</span> Logout</div>
+</div>
+</div>
 <div class="main">
-
-<!-- DASHBOARD -->
+<div class="topbar">
+<div style="display:flex;align-items:center;gap:12px">
+<button class="icon-btn hamburger" onclick="toggleSidebar()">☰</button>
+<div class="topbar-title" id="pageTitle">📊 Dashboard</div>
+</div>
+<div class="topbar-actions">
+<button class="icon-btn" onclick="refreshPage()">🔄</button>
+<button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+<button class="icon-btn" onclick="showPage('settings',null)">⚙️</button>
+</div>
+</div>
 <div id="dashboard" class="page active">
-  <div class="topbar">
-    <h1>📊 Dashboard</h1>
-    <div id="dbTime" style="color:var(--muted);font-size:13px"></div>
-  </div>
-  <div class="cards">
-    <div class="card blue"><h3>Total Users</h3><div class="val" id="s1">—</div><div class="sub">Registered</div></div>
-    <div class="card green"><h3>Today Deposit</h3><div class="val" id="s2">—</div><div class="sub">Approved</div></div>
-    <div class="card yellow"><h3>Today Bets</h3><div class="val" id="s3">—</div><div class="sub">Placed</div></div>
-    <div class="card red"><h3>Pending WD</h3><div class="val" id="s4">—</div><div class="sub">Withdrawal</div></div>
-    <div class="card purple"><h3>Pending Dep</h3><div class="val" id="s5">—</div><div class="sub">Deposit</div></div>
-    <div class="card orange"><h3>Today Payout</h3><div class="val" id="s6">—</div><div class="sub">Won amount</div></div>
-  </div>
-
-  <div class="tbl-wrap">
-    <div class="tbl-head"><h2>⏳ Pending Deposits</h2></div>
-    <table><thead><tr>
-      <th>User</th><th>Amount</th><th>Source</th><th>Time</th><th>Action</th>
-    </tr></thead>
-    <tbody id="dd"></tbody></table>
-  </div>
-
-  <div class="tbl-wrap">
-    <div class="tbl-head"><h2>⏳ Pending Withdrawals</h2></div>
-    <table><thead><tr>
-      <th>User</th><th>Amount</th><th>UPI</th><th>Time</th><th>Action</th>
-    </tr></thead>
-    <tbody id="dw"></tbody></table>
-  </div>
+<div class="stat-grid">
+<div class="stat-card gold"><div class="stat-label">Total Users</div><div class="stat-val" id="s_users">—</div><div class="stat-sub">Registered</div><div class="stat-icon">👥</div></div>
+<div class="stat-card green"><div class="stat-label">Today Deposit</div><div class="stat-val" id="s_dep">—</div><div class="stat-sub">Approved</div><div class="stat-icon">💰</div></div>
+<div class="stat-card blue"><div class="stat-label">Today Bets</div><div class="stat-val" id="s_bets">—</div><div class="stat-sub">Placed</div><div class="stat-icon">🎯</div></div>
+<div class="stat-card red"><div class="stat-label">Pending WD</div><div class="stat-val" id="s_wd">—</div><div class="stat-sub">Awaiting</div><div class="stat-icon">🏧</div></div>
 </div>
-
-<!-- DEPOSITS -->
+<div class="table-card">
+<div class="table-header"><div class="table-title">⏳ Pending Deposits</div><button class="btn btn-ghost" onclick="loadDashboard()">🔄</button></div>
+<table><thead><tr><th>User</th><th>Amount</th><th>Source</th><th>Time</th><th>Action</th></tr></thead>
+<tbody id="dashDeps"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Loading...</td></tr></tbody></table>
+</div>
+<div class="table-card">
+<div class="table-header"><div class="table-title">⏳ Pending Withdrawals</div><button class="btn btn-ghost" onclick="loadDashboard()">🔄</button></div>
+<table><thead><tr><th>User</th><th>Amount</th><th>UPI</th><th>Time</th><th>Action</th></tr></thead>
+<tbody id="dashWds"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Loading...</td></tr></tbody></table>
+</div>
+</div>
 <div id="deposits" class="page">
-  <div class="topbar"><h1>💰 Deposits</h1>
-    <button class="btn btn-green btn-sm" onclick="showManualDeposit()">+ Manual Deposit</button>
-  </div>
-  <div class="tbl-wrap">
-    <table><thead><tr>
-      <th>User</th><th>Amount</th><th>UTR</th><th>Source</th><th>Status</th><th>Time</th><th>Action</th>
-    </tr></thead>
-    <tbody id="depTbl"></tbody></table>
-  </div>
+<div class="table-card">
+<div class="table-header"><div class="table-title">💰 Deposits</div><button class="btn btn-ghost" onclick="loadDeposits()">🔄</button></div>
+<table><thead><tr><th>User</th><th>Amount</th><th>UTR</th><th>Source</th><th>Status</th><th>Time</th><th>Action</th></tr></thead>
+<tbody id="depsTable"></tbody></table>
 </div>
-
-<!-- WITHDRAWALS -->
+</div>
 <div id="withdrawals" class="page">
-  <div class="topbar"><h1>🏧 Withdrawals</h1></div>
-  <div class="tbl-wrap">
-    <table><thead><tr>
-      <th>User</th><th>Amount</th><th>UPI</th><th>Status</th><th>Time</th><th>Action</th>
-    </tr></thead>
-    <tbody id="wdTbl"></tbody></table>
-  </div>
+<div class="table-card">
+<div class="table-header"><div class="table-title">🏧 Withdrawals</div><button class="btn btn-ghost" onclick="loadWithdrawals()">🔄</button></div>
+<table><thead><tr><th>User</th><th>Amount</th><th>UPI</th><th>UTR</th><th>Status</th><th>Time</th><th>Action</th></tr></thead>
+<tbody id="wdsTable"></tbody></table>
 </div>
-
-<!-- MARKETS -->
+</div>
 <div id="markets" class="page">
-  <div class="topbar"><h1>🕐 Markets</h1>
-    <button class="btn btn-primary btn-sm" onclick="showAddMarket()">+ Add Market</button>
-  </div>
-  <div class="tbl-wrap">
-    <table><thead><tr>
-      <th>Market</th><th>Open</th><th>Close</th><th>Result</th><th>Status</th><th>Action</th>
-    </tr></thead>
-    <tbody id="mktTbl"></tbody></table>
-  </div>
+<div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+<button class="btn btn-primary" onclick="openAddMarket()">➕ Add Market</button>
 </div>
-
-<!-- RESULTS -->
+<div class="table-card">
+<div class="table-header"><div class="table-title">🕐 Markets</div><button class="btn btn-ghost" onclick="loadMarkets()">🔄</button></div>
+<table><thead><tr><th>Name</th><th>Open</th><th>Close</th><th>Result</th><th>Status</th><th>Action</th></tr></thead>
+<tbody id="mktTable"></tbody></table>
+</div>
+</div>
 <div id="results" class="page">
-  <div class="topbar"><h1>🎲 Declare Result</h1></div>
-  <div class="settings-section">
-    <h3>Result Enter Karo</h3>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Market Select</label>
-        <select id="rMkt"></select>
-      </div>
-      <div class="form-group">
-        <label>Open Pana (3 digit)</label>
-        <input type="number" id="rOP" placeholder="123" maxlength="3" oninput="calcRes()">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Close Pana (3 digit)</label>
-        <input type="number" id="rCP" placeholder="456" maxlength="3" oninput="calcRes()">
-      </div>
-      <div class="form-group">
-        <label>Auto Result</label>
-        <input id="rCalc" readonly placeholder="Auto calculate hoga" style="background:#0a1020;color:var(--green);font-weight:700">
-      </div>
-    </div>
-    <button class="btn btn-green" onclick="declareResult()">✅ Result Declare Karo</button>
-  </div>
-  <div class="tbl-wrap">
-    <div class="tbl-head"><h2>Recent Results</h2></div>
-    <table><thead><tr>
-      <th>Market</th><th>Open Pana</th><th>Open</th><th>Jodi</th><th>Close Pana</th><th>Close</th><th>Date</th>
-    </tr></thead>
-    <tbody id="resTbl"></tbody></table>
-  </div>
+<div class="section-card">
+<div class="section-title">🎲 Declare Result</div>
+<div class="form-grid">
+<div class="form-group"><label>Market</label><select id="resMarket" onchange="calcResult()"></select></div>
+<div class="form-group"><label>Open Pana (3 digit)</label><input type="number" id="openPana" placeholder="123" oninput="calcResult()"></div>
+<div class="form-group"><label>Close Pana (3 digit)</label><input type="number" id="closePana" placeholder="456" oninput="calcResult()"></div>
+<div class="form-group"><label>Auto Preview</label><input type="text" id="resPreview" readonly style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:18px"></div>
 </div>
-
-<!-- ALL BETS -->
-<div id="bets" class="page">
-  <div class="topbar"><h1>🎯 All Bets</h1></div>
-  <div class="tbl-wrap">
-    <table><thead><tr>
-      <th>User</th><th>Market</th><th>Type</th><th>Number</th><th>Amount</th><th>Win</th><th>Status</th><th>Time</th>
-    </tr></thead>
-    <tbody id="betsTbl"></tbody></table>
-  </div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="declareResult()">✅ Declare Result</button>
+<button class="btn btn-ghost" onclick="clearResult()">🔄 Clear</button>
 </div>
-
-<!-- USERS -->
+</div>
+<div class="table-card">
+<div class="table-header"><div class="table-title">📋 Recent Results</div></div>
+<table><thead><tr><th>Market</th><th>Open Pana</th><th>Open Ank</th><th>Jodi</th><th>Close Pana</th><th>Close Ank</th><th>Date</th></tr></thead>
+<tbody id="resTable"></tbody></table>
+</div>
+</div>
+<div id="pdfs" class="page">
+<div class="section-card">
+<div class="section-title">📄 Market Bet PDFs & Data</div>
+<div class="form-group" style="max-width:300px;margin-bottom:20px">
+<label>Select Market</label>
+<select id="pdfMarketSel" onchange="loadPDFData()"><option value="">-- Select Market --</option></select>
+</div>
+<div id="pdfContent" style="display:none">
+<div class="pdf-grid" id="pdfCards"></div>
+<div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+<button class="btn btn-blue" onclick="copyTextData()">📋 Copy Text Data</button>
+<button class="btn btn-ghost" onclick="toggleDataBox()">🔢 Show/Hide Data</button>
+</div>
+<div id="textDataBox" style="margin-top:16px;display:none">
+<div class="data-box" id="textData"></div>
+</div>
+</div>
+</div>
+</div>
 <div id="users" class="page">
-  <div class="topbar"><h1>👥 Users</h1></div>
-  <div class="tbl-wrap">
-    <table><thead><tr>
-      <th>Name</th><th>WhatsApp</th><th>UPI</th><th>Balance</th><th>Status</th><th>Joined</th><th>Action</th>
-    </tr></thead>
-    <tbody id="usersTbl"></tbody></table>
-  </div>
+<div class="table-card">
+<div class="table-header">
+<div class="table-title">👥 Users</div>
+<div style="display:flex;gap:8px">
+<input type="text" id="userSearch" placeholder="Search..." oninput="filterUsers()" style="padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px">
+<button class="btn btn-ghost" onclick="loadUsers()">🔄</button>
 </div>
-
-<!-- SETTINGS -->
+</div>
+<table><thead><tr><th>Name</th><th>WhatsApp</th><th>UPI</th><th>Balance</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
+<tbody id="usersTable"></tbody></table>
+</div>
+</div>
+<div id="rates" class="page">
+<div class="section-card">
+<div class="section-title">⚙️ Game Rates</div>
+<div class="rate-grid">
+<div class="rate-item"><div class="rate-name">Open Single</div><input type="number" class="rate-input" id="rate_open_single" value="9" step="0.1"></div>
+<div class="rate-item"><div class="rate-name">Open Pana</div><input type="number" class="rate-input" id="rate_open_pana" value="150" step="0.1"></div>
+<div class="rate-item"><div class="rate-name">Jodi</div><input type="number" class="rate-input" id="rate_jodi" value="90" step="0.1"></div>
+<div class="rate-item"><div class="rate-name">Close Single</div><input type="number" class="rate-input" id="rate_close_single" value="9" step="0.1"></div>
+<div class="rate-item"><div class="rate-name">Close Pana</div><input type="number" class="rate-input" id="rate_close_pana" value="300" step="0.1"></div>
+<div class="rate-item"><div class="rate-name">Triple Pana</div><input type="number" class="rate-input" id="rate_triple_pana" value="1000" step="0.1"></div>
+</div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="saveRates()">💾 Save Rates</button>
+<button class="btn btn-ghost" onclick="loadRates()">🔄 Reset</button>
+</div>
+</div>
+</div>
 <div id="settings" class="page">
-  <div class="topbar"><h1>⚙️ Settings</h1></div>
-
-  <!-- UPI Settings -->
-  <div class="settings-section">
-    <h3>💳 UPI Settings</h3>
-    <div class="form-row">
-      <div class="form-group">
-        <label>UPI ID</label>
-        <input type="text" id="setUPI" placeholder="yourname@upi">
-      </div>
-      <div class="form-group">
-        <label>Account Name</label>
-        <input type="text" id="setName" placeholder="Betting Admin">
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="saveUPI()">💾 Save UPI</button>
-    <div id="upiMsg"></div>
-  </div>
-
-  <!-- Admin Password -->
-  <div class="settings-section">
-    <h3>🔐 Admin Password Change</h3>
-    <div class="form-row">
-      <div class="form-group">
-        <label>New Username</label>
-        <input type="text" id="newUser" placeholder="admin">
-      </div>
-      <div class="form-group">
-        <label>New Password</label>
-        <input type="password" id="newPass" placeholder="New password">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Confirm Password</label>
-      <input type="password" id="confPass" placeholder="Confirm password">
-    </div>
-    <button class="btn btn-yellow" onclick="changePassword()">🔑 Password Change Karo</button>
-    <div id="passMsg"></div>
-  </div>
-
-  <!-- Bet Limits -->
-  <div class="settings-section">
-    <h3>🎯 Bet & Wallet Limits</h3>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Min Bet</label>
-        <input type="number" id="setMinBet" placeholder="10">
-      </div>
-      <div class="form-group">
-        <label>Min Deposit</label>
-        <input type="number" id="setMinDep" placeholder="100">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Max Deposit</label>
-        <input type="number" id="setMaxDep" placeholder="50000">
-      </div>
-      <div class="form-group">
-        <label>Max Withdrawal</label>
-        <input type="number" id="setMaxWD" placeholder="25000">
-      </div>
-    </div>
-    <button class="btn btn-orange" onclick="saveLimits()">💾 Save Limits</button>
-    <div id="limMsg"></div>
-  </div>
+<div class="section-card">
+<div class="section-title">📱 UPI Settings</div>
+<div class="form-grid">
+<div class="form-group"><label>UPI ID</label><input type="text" id="set_upi" placeholder="yourname@upi"></div>
+<div class="form-group"><label>Display Name</label><input type="text" id="set_upi_name" placeholder="Betting Admin"></div>
 </div>
-
-</div><!-- end main -->
-
-<!-- MODALS -->
-
-<!-- Add Market Modal -->
-<div class="modal-overlay" id="mktModal">
-  <div class="modal">
-    <h2 id="mktModalTitle">➕ Market Add Karo</h2>
-    <input type="hidden" id="mktId">
-    <div class="form-group">
-      <label>Market Name</label>
-      <input type="text" id="mktName" placeholder="Morning Market">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Open Time</label>
-        <input type="time" id="mktOpen">
-      </div>
-      <div class="form-group">
-        <label>Close Time</label>
-        <input type="time" id="mktClose">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Result Time</label>
-      <input type="time" id="mktResult">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('mktModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveMarket()">💾 Save</button>
-    </div>
-  </div>
+<div class="form-group" style="margin-top:12px"><label>QR Code URL</label><input type="text" id="set_qr_url" placeholder="https://...QR image URL..."></div>
+<div id="qrPreview" style="margin-top:12px;display:none"><img id="qrImg" src="" style="width:150px;height:150px;border-radius:12px;border:2px solid var(--accent)"></div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="saveUPISettings()">💾 Save UPI</button>
+<button class="btn btn-blue" onclick="previewQR()">👁️ Preview QR</button>
 </div>
-
-<!-- Manual Deposit Modal -->
-<div class="modal-overlay" id="depModal">
-  <div class="modal">
-    <h2>💰 Manual Deposit</h2>
-    <div class="form-group">
-      <label>WhatsApp Number</label>
-      <input type="text" id="depPhone" placeholder="919876543210">
-    </div>
-    <div class="form-group">
-      <label>Amount</label>
-      <input type="number" id="depAmt" placeholder="500">
-    </div>
-    <div class="form-group">
-      <label>UTR / Note</label>
-      <input type="text" id="depUTR" placeholder="UTR ya reason">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('depModal')">Cancel</button>
-      <button class="btn btn-green" onclick="saveManualDeposit()">✅ Add Karo</button>
-    </div>
-  </div>
 </div>
-
-<!-- User Detail Modal -->
+<div class="section-card">
+<div class="section-title">🔐 Change Credentials</div>
+<div class="form-grid">
+<div class="form-group"><label>New Username</label><input type="text" id="set_username" placeholder="New username"></div>
+<div class="form-group"><label>Current Password</label><input type="password" id="set_cur_pass" placeholder="Current password"></div>
+<div class="form-group"><label>New Password</label><input type="password" id="set_new_pass" placeholder="New password"></div>
+<div class="form-group"><label>Confirm Password</label><input type="password" id="set_con_pass" placeholder="Confirm password"></div>
+</div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="changeCredentials()">🔐 Update</button>
+</div>
+</div>
+<div class="section-card">
+<div class="section-title">🤖 Bot Limits</div>
+<div class="form-grid">
+<div class="form-group"><label>Min Deposit</label><input type="number" id="set_min_dep" value="100"></div>
+<div class="form-group"><label>Max Deposit</label><input type="number" id="set_max_dep" value="50000"></div>
+<div class="form-group"><label>Min Withdrawal</label><input type="number" id="set_min_wd" value="200"></div>
+<div class="form-group"><label>Max Withdrawal</label><input type="number" id="set_max_wd" value="25000"></div>
+<div class="form-group"><label>Min Bet</label><input type="number" id="set_min_bet" value="10"></div>
+<div class="form-group"><label>Admin Phone</label><input type="text" id="set_admin_phone" placeholder="91XXXXXXXXXX"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="marketModal">
+<div class="modal">
+<span class="modal-close" onclick="closeModal('marketModal')">✕</span>
+<div class="modal-title" id="marketModalTitle">➕ Add Market</div>
+<input type="hidden" id="editMarketId">
+<div class="form-group" style="margin-bottom:14px"><label>Market Name</label><input type="text" id="mkt_name" placeholder="Morning Market"></div>
+<div class="form-grid">
+<div class="form-group"><label>Open Time</label><input type="time" id="mkt_open"></div>
+<div class="form-group"><label>Close Time</label><input type="time" id="mkt_close"></div>
+<div class="form-group"><label>Result Time</label><input type="time" id="mkt_result"></div>
+<div class="form-group"><label>Status</label><select id="mkt_status"><option value="open">Open</option><option value="closed">Closed</option></select></div>
+</div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="saveMarket()">💾 Save</button>
+<button class="btn btn-ghost" onclick="closeModal('marketModal')">Cancel</button>
+</div>
+</div>
+</div>
 <div class="modal-overlay" id="userModal">
-  <div class="modal">
-    <h2>👤 User Detail</h2>
-    <div id="userDetail"></div>
-    <div class="form-group" style="margin-top:16px">
-      <label>Wallet Adjust (+ ya - amount)</label>
-      <input type="number" id="adjAmt" placeholder="100 ya -100">
-    </div>
-    <div class="form-group">
-      <label>Reason</label>
-      <input type="text" id="adjReason" placeholder="Adjustment reason">
-    </div>
-    <input type="hidden" id="adjUserId">
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('userModal')">Close</button>
-      <button class="btn btn-yellow" onclick="adjustWallet()">💰 Wallet Adjust</button>
-    </div>
-  </div>
+<div class="modal">
+<span class="modal-close" onclick="closeModal('userModal')">✕</span>
+<div class="modal-title">👤 User Details</div>
+<div id="userDetail"></div>
+<div class="form-group" style="margin-top:16px"><label>Wallet Adjust</label><input type="number" id="walletAdj" placeholder="500 or -200"></div>
+<div class="form-group" style="margin-top:12px"><label>Reason</label><input type="text" id="walletReason" placeholder="Reason"></div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="adjustWallet()">💰 Adjust</button>
+<button class="btn btn-ghost" onclick="closeModal('userModal')">Close</button>
 </div>
-
+</div>
+</div>
 <script>
-const BASE = '';
-let TOKEN = localStorage.getItem('admin_token');
-let currentPage = 'dashboard';
-
-// ── TIME ────────────────────────────────────────────────────────
-function updateTime(){
-  const el = document.getElementById('dbTime');
-  if(el) el.textContent = new Date().toLocaleString('en-IN',{
-    day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'
-  });
-}
-setInterval(updateTime, 1000);
-updateTime();
-
-// ── LOGIN ───────────────────────────────────────────────────────
-async function doLogin(){
-  const u = document.getElementById('lu').value.trim();
-  const p = document.getElementById('lp').value;
-  document.getElementById('lerr').textContent = '';
-  try{
-    const r = await fetch('/api/admin/login',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:u,password:p})
-    });
-    const d = await r.json();
-    if(d.token){
-      TOKEN = d.token;
-      localStorage.setItem('admin_token',TOKEN);
-      document.getElementById('loginPage').style.display='none';
-      loadPage('dashboard');
-    } else {
-      document.getElementById('lerr').textContent = d.error||'Login failed';
-    }
-  } catch(e){
-    document.getElementById('lerr').textContent = 'Server connect nahi hua';
-  }
-}
-
-document.getElementById('lp').addEventListener('keydown', e => {
-  if(e.key==='Enter') doLogin();
-});
-
-function doLogout(){
-  localStorage.removeItem('admin_token');
-  location.reload();
-}
-
-// ── NAVIGATION ──────────────────────────────────────────────────
-function nav(page){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.sidebar a, .bottom-nav a').forEach(a=>a.classList.remove('active'));
-  document.getElementById(page).classList.add('active');
-  const sd = document.getElementById('s-'+page);
-  const mb = document.getElementById('m-'+page);
-  if(sd) sd.classList.add('active');
-  if(mb) mb.classList.add('active');
-  currentPage = page;
-  loadPage(page);
-}
-
-function loadPage(page){
-  if(page==='dashboard')   loadDashboard();
-  if(page==='deposits')    loadDeposits();
-  if(page==='withdrawals') loadWithdrawals();
-  if(page==='markets')     loadMarkets();
-  if(page==='results')     loadResults();
-  if(page==='bets')        loadBets();
-  if(page==='users')       loadUsers();
-}
-
-// ── API ─────────────────────────────────────────────────────────
-async function api(path, method='GET', body=null){
-  const opts={method,headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}};
-  if(body) opts.body=JSON.stringify(body);
-  const r = await fetch('/api/admin'+path, opts);
-  return r.json();
-}
-
-function fmt(dt){
-  if(!dt) return '—';
-  return new Date(dt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-}
-
-function emptyRow(cols, msg){
-  return `<tr><td colspan="${cols}" style="text-align:center;color:var(--muted);padding:24px">${msg}</td></tr>`;
-}
-
-// ── DASHBOARD ───────────────────────────────────────────────────
-async function loadDashboard(){
-  const s = await api('/stats');
-  document.getElementById('s1').textContent = s.totalUsers||0;
-  document.getElementById('s2').textContent = '₹'+(s.todayDeposit||0);
-  document.getElementById('s3').textContent = s.todayBets||0;
-  document.getElementById('s4').textContent = s.pendingWithdrawals||0;
-  document.getElementById('s5').textContent = s.pendingDeposits||0;
-  document.getElementById('s6').textContent = '₹'+(s.todayPayout||0);
-
-  const deps = await api('/deposits/pending');
-  document.getElementById('dd').innerHTML = deps.length ? deps.map(d=>`
-    <tr>
-      <td><b>${d.name}</b><br><small style="color:var(--muted)">${d.whatsapp_number}</small></td>
-      <td style="color:var(--green);font-weight:700">₹${d.amount}</td>
-      <td><span class="badge ${d.source}">${d.source}</span></td>
-      <td style="color:var(--muted);font-size:12px">${fmt(d.created_at)}</td>
-      <td>
-        <button class="btn btn-green btn-sm" onclick="approveDep(${d.id})">✅</button>
-        <button class="btn btn-red btn-sm" onclick="rejectDep(${d.id})">❌</button>
-      </td>
-    </tr>`).join('') : emptyRow(5,'Koi pending deposit nahi');
-
-  const wds = await api('/withdrawals/pending');
-  document.getElementById('dw').innerHTML = wds.length ? wds.map(w=>`
-    <tr>
-      <td><b>${w.name}</b><br><small style="color:var(--muted)">${w.whatsapp_number}</small></td>
-      <td style="color:var(--red);font-weight:700">₹${w.amount}</td>
-      <td><code style="color:var(--muted)">${w.upi_id}</code></td>
-      <td style="color:var(--muted);font-size:12px">${fmt(w.created_at)}</td>
-      <td>
-        <button class="btn btn-blue btn-sm" onclick="payWD(${w.id},${w.amount})">💸 Pay</button>
-        <button class="btn btn-red btn-sm" onclick="rejectWD(${w.id})">❌</button>
-      </td>
-    </tr>`).join('') : emptyRow(5,'Koi pending withdrawal nahi');
-}
-
-// ── DEPOSITS ────────────────────────────────────────────────────
-async function loadDeposits(){
-  const deps = await api('/deposits/pending');
-  document.getElementById('depTbl').innerHTML = deps.length ? deps.map(d=>`
-    <tr>
-      <td><b>${d.name}</b><br><small>${d.whatsapp_number}</small></td>
-      <td style="color:var(--green);font-weight:700">₹${d.amount}</td>
-      <td><code>${d.utr_number||'—'}</code></td>
-      <td><span class="badge ${d.source}">${d.source}</span></td>
-      <td><span class="badge ${d.status}">${d.status}</span></td>
-      <td style="font-size:12px">${fmt(d.created_at)}</td>
-      <td>
-        <button class="btn btn-green btn-sm" onclick="approveDep(${d.id})">✅</button>
-        <button class="btn btn-red btn-sm" onclick="rejectDep(${d.id})">❌</button>
-      </td>
-    </tr>`).join('') : emptyRow(7,'Koi pending deposit nahi');
-}
-
-async function approveDep(id){
-  const utr = prompt('UTR number (khali chhod sakte ho):');
-  await api('/deposits/'+id+'/approve','POST',{utr:utr||'MANUAL'});
-  showAlert('✅ Deposit approved!');
-  loadDashboard();
-  if(currentPage==='deposits') loadDeposits();
-}
-
-async function rejectDep(id){
-  const r = prompt('Reject reason:');
-  if(r===null) return;
-  await api('/deposits/'+id+'/reject','POST',{reason:r});
-  showAlert('❌ Deposit rejected');
-  loadDashboard();
-}
-
-function showManualDeposit(){ openModal('depModal'); }
-
-async function saveManualDeposit(){
-  const phone = document.getElementById('depPhone').value.trim();
-  const amt   = parseFloat(document.getElementById('depAmt').value);
-  const utr   = document.getElementById('depUTR').value.trim();
-  if(!phone||!amt){ alert('Phone aur amount required'); return; }
-  const r = await api('/deposits/manual','POST',{phone,amount:amt,utr:utr||'MANUAL'});
-  if(r.success){ closeModal('depModal'); showAlert('✅ Manual deposit added!'); loadDashboard(); }
-  else alert('Error: '+(r.error||'Failed'));
-}
-
-// ── WITHDRAWALS ─────────────────────────────────────────────────
-async function loadWithdrawals(){
-  const wds = await api('/withdrawals/pending');
-  document.getElementById('wdTbl').innerHTML = wds.length ? wds.map(w=>`
-    <tr>
-      <td><b>${w.name}</b><br><small>${w.whatsapp_number}</small></td>
-      <td style="color:var(--red);font-weight:700">₹${w.amount}</td>
-      <td><code>${w.upi_id}</code></td>
-      <td><span class="badge ${w.status}">${w.status}</span></td>
-      <td style="font-size:12px">${fmt(w.created_at)}</td>
-      <td>
-        <button class="btn btn-blue btn-sm" onclick="payWD(${w.id},${w.amount})">💸 Pay</button>
-        <button class="btn btn-red btn-sm" onclick="rejectWD(${w.id})">❌</button>
-      </td>
-    </tr>`).join('') : emptyRow(6,'Koi pending withdrawal nahi');
-}
-
-async function payWD(id, amt){
-  const utr = prompt('₹'+amt+' UPI se bhejo.\nPhir UTR yahan paste karo:');
-  if(!utr) return;
-  await api('/withdrawals/'+id+'/pay','POST',{utr});
-  showAlert('✅ Withdrawal paid!');
-  loadDashboard();
-  if(currentPage==='withdrawals') loadWithdrawals();
-}
-
-async function rejectWD(id){
-  const r = prompt('Reject reason:');
-  if(r===null) return;
-  await api('/withdrawals/'+id+'/reject','POST',{reason:r});
-  showAlert('❌ Rejected. Amount wapas credit ho gaya.');
-  loadDashboard();
-}
-
-// ── MARKETS ─────────────────────────────────────────────────────
-async function loadMarkets(){
-  const mkts = await api('/markets');
-  document.getElementById('mktTbl').innerHTML = mkts.length ? mkts.map(m=>`
-    <tr>
-      <td><b>${m.name}</b></td>
-      <td>${m.open_time}</td>
-      <td>${m.close_time}</td>
-      <td>${m.result_time}</td>
-      <td><span class="badge ${m.status}">${m.status}</span></td>
-      <td>
-        <button class="btn btn-blue btn-sm" onclick="editMarket(${m.id},'${m.name}','${m.open_time}','${m.close_time}','${m.result_time}')">✏️ Edit</button>
-        <button class="btn btn-red btn-sm" onclick="deleteMarket(${m.id})">🗑️</button>
-      </td>
-    </tr>`).join('') : emptyRow(6,'Koi market nahi');
-}
-
-function showAddMarket(){
-  document.getElementById('mktModalTitle').textContent = '➕ Market Add Karo';
-  document.getElementById('mktId').value = '';
-  document.getElementById('mktName').value = '';
-  document.getElementById('mktOpen').value = '';
-  document.getElementById('mktClose').value = '';
-  document.getElementById('mktResult').value = '';
-  openModal('mktModal');
-}
-
-function editMarket(id, name, open, close, result){
-  document.getElementById('mktModalTitle').textContent = '✏️ Market Edit Karo';
-  document.getElementById('mktId').value    = id;
-  document.getElementById('mktName').value  = name;
-  document.getElementById('mktOpen').value  = open.slice(0,5);
-  document.getElementById('mktClose').value = close.slice(0,5);
-  document.getElementById('mktResult').value= result.slice(0,5);
-  openModal('mktModal');
-}
-
-async function saveMarket(){
-  const id     = document.getElementById('mktId').value;
-  const name   = document.getElementById('mktName').value.trim();
-  const open   = document.getElementById('mktOpen').value;
-  const close  = document.getElementById('mktClose').value;
-  const result = document.getElementById('mktResult').value;
-  if(!name||!open||!close||!result){ alert('Sab fields required hain'); return; }
-  const path   = id ? '/markets/'+id : '/markets';
-  const method = id ? 'PUT' : 'POST';
-  const r = await api(path, method, {name, open_time:open, close_time:close, result_time:result});
-  if(r.success){ closeModal('mktModal'); showAlert('✅ Market saved!'); loadMarkets(); }
-  else alert('Error: '+(r.error||'Failed'));
-}
-
-async function deleteMarket(id){
-  if(!confirm('Market delete karna chahte ho?')) return;
-  await api('/markets/'+id,'DELETE');
-  showAlert('🗑️ Market deleted');
-  loadMarkets();
-}
-
-// ── RESULTS ─────────────────────────────────────────────────────
-async function loadResults(){
-  const mkts = await api('/markets');
-  const open = mkts.filter(m=>m.status!=='resulted'&&m.status!=='cancelled');
-  document.getElementById('rMkt').innerHTML = open.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
-
-  const resulted = mkts.filter(m=>m.status==='resulted');
-  document.getElementById('resTbl').innerHTML = resulted.length ? resulted.map(m=>`
-    <tr>
-      <td><b>${m.name}</b></td>
-      <td>${m.result_open_pana||'—'}</td>
-      <td style="color:var(--blue);font-weight:700">${dsum(m.result_open_pana)}</td>
-      <td style="color:var(--yellow);font-weight:700;font-size:16px">${m.result_jodi||'—'}</td>
-      <td>${m.result_close_pana||'—'}</td>
-      <td style="color:var(--blue);font-weight:700">${dsum(m.result_close_pana)}</td>
-      <td style="color:var(--muted);font-size:12px">${fmt(m.resulted_at)}</td>
-    </tr>`).join('') : emptyRow(7,'Koi result nahi');
-}
-
-function calcRes(){
-  const op = document.getElementById('rOP').value;
-  const cp = document.getElementById('rCP').value;
-  if(op.length===3&&cp.length===3){
-    document.getElementById('rCalc').value =
-      'Open:'+dsum(op)+' | Jodi:'+dsum(op)+''+dsum(cp)+' | Close:'+dsum(cp);
-  }
-}
-
-async function declareResult(){
-  const mid = document.getElementById('rMkt').value;
-  const op  = document.getElementById('rOP').value;
-  const cp  = document.getElementById('rCP').value;
-  if(!mid){ alert('Market select karo'); return; }
-  if(op.length!==3){ alert('Open Pana 3 digit hona chahiye'); return; }
-  if(cp.length!==3){ alert('Close Pana 3 digit hona chahiye'); return; }
-  if(!confirm('Result declare karna chahte ho?\nOpen: '+op+'\nClose: '+cp)) return;
-  const r = await api('/markets/'+mid+'/result','POST',{openPana:op,closePana:cp});
-  if(r.success){
-    showAlert('🎉 Result declared! Jodi: '+r.jodi+' | Winners: '+(r.summary?.totalWinners||0)+' | Payout: ₹'+(r.summary?.totalPayout||0));
-    loadResults();
-  } else alert('Error: '+(r.error||'Failed'));
-}
-
-// ── BETS ────────────────────────────────────────────────────────
-async function loadBets(){
-  const bets = await api('/bets');
-  document.getElementById('betsTbl').innerHTML = bets.length ? bets.map(b=>`
-    <tr>
-      <td>${b.user_name||'—'}</td>
-      <td>${b.market_name||'—'}</td>
-      <td>${b.bet_type.replace('_',' ')}</td>
-      <td style="font-weight:700">${b.number}</td>
-      <td style="color:var(--yellow)">₹${b.amount}</td>
-      <td style="color:var(--green)">${b.actual_win>0?'₹'+b.actual_win:'—'}</td>
-      <td><span class="badge ${b.status}">${b.status}</span></td>
-      <td style="font-size:12px;color:var(--muted)">${fmt(b.placed_at)}</td>
-    </tr>`).join('') : emptyRow(8,'Koi bet nahi');
-}
-
-// ── USERS ────────────────────────────────────────────────────────
-async function loadUsers(){
-  const users = await api('/users');
-  document.getElementById('usersTbl').innerHTML = users.length ? users.map(u=>`
-    <tr>
-      <td><b>${u.name}</b></td>
-      <td>${u.whatsapp_number}</td>
-      <td><small>${u.upi_id||'—'}</small></td>
-      <td style="color:var(--green);font-weight:700">₹${u.wallet_balance}</td>
-      <td><span class="badge ${u.status}">${u.status}</span></td>
-      <td style="font-size:12px;color:var(--muted)">${fmt(u.registered_at)}</td>
-      <td>
-        <button class="btn btn-yellow btn-sm" onclick="showUserDetail(${u.id},'${u.name}','${u.whatsapp_number}','${u.upi_id||''}',${u.wallet_balance},'${u.status}')">👤</button>
-        ${u.status==='active'
-          ?`<button class="btn btn-red btn-sm" onclick="blockUser(${u.id},'block')">🚫</button>`
-          :`<button class="btn btn-green btn-sm" onclick="blockUser(${u.id},'unblock')">✅</button>`
-        }
-      </td>
-    </tr>`).join('') : emptyRow(7,'Koi user nahi');
-}
-
-function showUserDetail(id, name, phone, upi, bal, status){
-  document.getElementById('adjUserId').value = id;
-  document.getElementById('userDetail').innerHTML = `
-    <div style="background:#0f172a;border-radius:10px;padding:16px;margin-bottom:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><div style="color:var(--muted);font-size:11px">NAME</div><div style="font-weight:700">${name}</div></div>
-        <div><div style="color:var(--muted);font-size:11px">PHONE</div><div>${phone}</div></div>
-        <div><div style="color:var(--muted);font-size:11px">UPI</div><div>${upi||'—'}</div></div>
-        <div><div style="color:var(--muted);font-size:11px">BALANCE</div><div style="color:var(--green);font-weight:700">₹${bal}</div></div>
-        <div><div style="color:var(--muted);font-size:11px">STATUS</div><span class="badge ${status}">${status}</span></div>
-      </div>
-    </div>`;
-  openModal('userModal');
-}
-
-async function adjustWallet(){
-  const id  = document.getElementById('adjUserId').value;
-  const amt = parseFloat(document.getElementById('adjAmt').value);
-  const reason = document.getElementById('adjReason').value;
-  if(!amt){ alert('Amount daalo'); return; }
-  const r = await api('/users/'+id+'/adjust','POST',{amount:amt,reason:reason||'Admin adjustment'});
-  if(r.success){ closeModal('userModal'); showAlert('✅ Wallet adjusted!'); loadUsers(); }
-  else alert('Error: '+(r.error||'Failed'));
-}
-
-async function blockUser(id, action){
-  if(!confirm('User ko '+action+' karna chahte ho?')) return;
-  await api('/users/'+id+'/block','POST',{action});
-  showAlert(action==='block'?'🚫 User blocked':'✅ User unblocked');
-  loadUsers();
-}
-
-// ── SETTINGS ─────────────────────────────────────────────────────
-async function saveUPI(){
-  const upi  = document.getElementById('setUPI').value.trim();
-  const name = document.getElementById('setName').value.trim();
-  if(!upi||!name){ showMsg('upiMsg','❌ UPI aur name required','error'); return; }
-  const r = await api('/settings/upi','POST',{upi,name});
-  if(r.success) showMsg('upiMsg','✅ UPI saved!','success');
-  else showMsg('upiMsg','❌ '+(r.error||'Failed'),'error');
-}
-
-async function changePassword(){
-  const user = document.getElementById('newUser').value.trim();
-  const pass = document.getElementById('newPass').value;
-  const conf = document.getElementById('confPass').value;
-  if(!user||!pass){ showMsg('passMsg','❌ Username aur password required','error'); return; }
-  if(pass!==conf){ showMsg('passMsg','❌ Passwords match nahi karte','error'); return; }
-  if(pass.length<6){ showMsg('passMsg','❌ Password min 6 characters','error'); return; }
-  const r = await api('/settings/password','POST',{username:user,password:pass});
-  if(r.success) showMsg('passMsg','✅ Password changed! Dobara login karo.','success');
-  else showMsg('passMsg','❌ '+(r.error||'Failed'),'error');
-}
-
-async function saveLimits(){
-  const data = {
-    minBet:   document.getElementById('setMinBet').value,
-    minDep:   document.getElementById('setMinDep').value,
-    maxDep:   document.getElementById('setMaxDep').value,
-    maxWD:    document.getElementById('setMaxWD').value,
-  };
-  const r = await api('/settings/limits','POST',data);
-  if(r.success) showMsg('limMsg','✅ Limits saved!','success');
-  else showMsg('limMsg','❌ '+(r.error||'Failed'),'error');
-}
-
-// ── MODAL ────────────────────────────────────────────────────────
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
-});
-
-// ── HELPERS ──────────────────────────────────────────────────────
-function dsum(pana){
-  if(!pana||pana.length<3) return '—';
-  return pana.split('').reduce((a,b)=>a+parseInt(b),0)%10;
-}
-
-function showAlert(msg){
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;top:20px;right:20px;background:#1e293b;border:1px solid var(--green);color:var(--green);padding:12px 20px;border-radius:10px;z-index:999;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.5)';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(), 3000);
-}
-
-function showMsg(id, msg, type){
-  const el = document.getElementById(id);
-  el.innerHTML = `<div class="alert ${type}" style="margin-top:10px">${msg}</div>`;
-  setTimeout(()=>el.innerHTML='', 4000);
-}
-
-// ── INIT ─────────────────────────────────────────────────────────
-if(TOKEN){
-  document.getElementById('loginPage').style.display='none';
-  loadPage('dashboard');
-}
-setInterval(()=>{ if(currentPage==='dashboard') loadDashboard(); }, 30000);
+const API='';
+let TOKEN=localStorage.getItem('admin_token');
+let currentUserId=null;
+let allUsers=[];
+let isDark=localStorage.getItem('theme')!=='light';
+function toggleTheme(){isDark=!isDark;document.documentElement.setAttribute('data-theme',isDark?'dark':'light');document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';localStorage.setItem('theme',isDark?'dark':'light');}
+(function(){const t=localStorage.getItem('theme')||'dark';isDark=t==='dark';document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';})();
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mobileOverlay').classList.toggle('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mobileOverlay').classList.remove('open');}
+function toast(msg,type='success'){const el=document.createElement('div');el.className=`toast toast-${type}`;el.innerHTML=(type==='success'?'✅':type==='error'?'❌':'ℹ️')+' '+msg;document.getElementById('toastContainer').appendChild(el);setTimeout(()=>el.remove(),3500);}
+async function doLogin(){const u=document.getElementById('loginUser').value;const p=document.getElementById('loginPass').value;try{const res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const data=await res.json();if(data.token){TOKEN=data.token;localStorage.setItem('admin_token',TOKEN);document.getElementById('loginPage').style.display='none';toast('Login successful! Welcome 👋');loadDashboard();startAutoRefresh();}else{document.getElementById('loginErr').textContent=data.error||'Wrong credentials';}}catch(e){document.getElementById('loginErr').textContent='Server error';}}
+document.addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
+function doLogout(){if(!confirm('Logout?'))return;localStorage.removeItem('admin_token');location.reload();}
+async function api(path,method='GET',body=null){const opts={method,headers:{Authorization:`Bearer ${TOKEN}`,'Content-Type':'application/json'}};if(body)opts.body=JSON.stringify(body);const res=await fetch(`/api/admin${path}`,opts);return res.json();}
+const pageTitles={dashboard:'📊 Dashboard',deposits:'💰 Deposits',withdrawals:'🏧 Withdrawals',markets:'🕐 Markets',results:'🎲 Results',pdfs:'📄 Bet PDFs',users:'👥 Users',rates:'⚙️ Game Rates',settings:'🔧 Settings'};
+function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(a=>a.classList.remove('active'));document.getElementById(name).classList.add('active');if(el)el.classList.add('active');document.getElementById('pageTitle').textContent=pageTitles[name]||name;closeSidebar();if(name==='dashboard')loadDashboard();if(name==='deposits')loadDeposits();if(name==='withdrawals')loadWithdrawals();if(name==='markets')loadMarkets();if(name==='results')loadResults();if(name==='pdfs')loadPDFMarkets();if(name==='users')loadUsers();if(name==='rates')loadRates();}
+function refreshPage(){const a=document.querySelector('.page.active')?.id;if(a)showPage(a,null);toast('Refreshed!','info');}
+function fmtTime(dt){if(!dt)return'—';return new Date(dt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
+function digitSum(p){if(!p||p.length<3)return'—';return p.split('').reduce((a,b)=>a+parseInt(b),0)%10;}
+async function loadDashboard(){try{const s=await api('/stats');document.getElementById('s_users').textContent=s.totalUsers||0;document.getElementById('s_dep').textContent='₹'+(s.todayDeposit||0);document.getElementById('s_bets').textContent=s.todayBets||0;document.getElementById('s_wd').textContent=s.pendingWithdrawals||0;document.getElementById('depBadge').textContent=s.pendingDeposits||0;document.getElementById('wdBadge').textContent=s.pendingWithdrawals||0;const deps=await api('/deposits/pending');document.getElementById('dashDeps').innerHTML=deps.length?deps.map(d=>`<tr><td><b>${d.name}</b><br><small style="color:var(--text2)">${d.whatsapp_number}</small></td><td style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:18px">₹${d.amount}</td><td><span class="badge badge-${d.source}">${d.source}</span></td><td style="color:var(--text2);font-size:12px">${fmtTime(d.created_at)}</td><td><button class="btn btn-green" onclick="approveDeposit(${d.id})">✅ Approve</button><button class="btn btn-red" onclick="rejectDeposit(${d.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Koi pending deposit nahi ✓</td></tr>';const wds=await api('/withdrawals/pending');document.getElementById('dashWds').innerHTML=wds.length?wds.map(w=>`<tr><td><b>${w.name}</b><br><small style="color:var(--text2)">${w.whatsapp_number}</small></td><td style="color:var(--red);font-weight:700;font-family:Rajdhani,sans-serif;font-size:18px">₹${w.amount}</td><td><code style="color:var(--text2);font-size:12px">${w.upi_id}</code></td><td style="color:var(--text2);font-size:12px">${fmtTime(w.created_at)}</td><td><button class="btn btn-blue" onclick="payWithdrawal(${w.id},${w.amount},'${w.upi_id}')">💸 Pay</button><button class="btn btn-red" onclick="rejectWithdrawal(${w.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Koi pending withdrawal nahi ✓</td></tr>';}catch(e){console.error(e);}}
+async function loadDeposits(){const deps=await api('/deposits/pending');document.getElementById('depsTable').innerHTML=deps.length?deps.map(d=>`<tr><td><b>${d.name}</b><br><small>${d.whatsapp_number}</small></td><td style="color:var(--green);font-weight:700">₹${d.amount}</td><td><code style="font-size:12px">${d.utr_number||'—'}</code></td><td><span class="badge badge-${d.source}">${d.source}</span></td><td><span class="badge badge-${d.status}">${d.status}</span></td><td style="font-size:12px;color:var(--text2)">${fmtTime(d.created_at)}</td><td><button class="btn btn-green" onclick="approveDeposit(${d.id})">✅</button><button class="btn btn-red" onclick="rejectDeposit(${d.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Koi pending deposit nahi ✓</td></tr>';}
+async function approveDeposit(id){const utr=prompt('UTR number (khali bhi chhod sakte ho):');await api(`/deposits/${id}/approve`,'POST',{utr});toast('Deposit approved!');loadDashboard();loadDeposits();}
+async function rejectDeposit(id){const reason=prompt('Reject reason:');await api(`/deposits/${id}/reject`,'POST',{reason});toast('Deposit rejected','error');loadDashboard();loadDeposits();}
+async function loadWithdrawals(){const wds=await api('/withdrawals/pending');document.getElementById('wdsTable').innerHTML=wds.length?wds.map(w=>`<tr><td><b>${w.name}</b><br><small>${w.whatsapp_number}</small></td><td style="color:var(--red);font-weight:700">₹${w.amount}</td><td><code style="font-size:12px">${w.upi_id}</code></td><td><code style="font-size:12px">${w.utr_number||'—'}</code></td><td><span class="badge badge-${w.status}">${w.status}</span></td><td style="font-size:12px;color:var(--text2)">${fmtTime(w.created_at)}</td><td><button class="btn btn-blue" onclick="payWithdrawal(${w.id},${w.amount},'${w.upi_id}')">💸 Pay</button><button class="btn btn-red" onclick="rejectWithdrawal(${w.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Koi pending withdrawal nahi ✓</td></tr>';}
+async function payWithdrawal(id,amount,upi){const utr=prompt(`₹${amount} bhejo: ${upi}\nUTR paste karo:`);if(!utr)return;await api(`/withdrawals/${id}/pay`,'POST',{utr});toast(`₹${amount} paid!`);loadDashboard();loadWithdrawals();}
+async function rejectWithdrawal(id){const reason=prompt('Reject reason:');await api(`/withdrawals/${id}/reject`,'POST',{reason});toast('Rejected','error');loadDashboard();loadWithdrawals();}
+async function loadMarkets(){const mkts=await api('/markets');document.getElementById('mktTable').innerHTML=mkts.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.open_time}</td><td>${m.close_time}</td><td>${m.result_time}</td><td><span class="badge badge-${m.status}">${m.status}</span></td><td><button class="btn btn-blue" onclick='editMarket(${JSON.stringify(m)})'>✏️ Edit</button><button class="btn btn-ghost" onclick="toggleMarket(${m.id},'${m.status}')">🔄</button></td></tr>`).join('');}
+function openAddMarket(){document.getElementById('editMarketId').value='';document.getElementById('marketModalTitle').textContent='➕ Add Market';['mkt_name','mkt_open','mkt_close','mkt_result'].forEach(id=>document.getElementById(id).value='');document.getElementById('marketModal').classList.add('open');}
+function editMarket(m){document.getElementById('editMarketId').value=m.id;document.getElementById('marketModalTitle').textContent='✏️ Edit Market';document.getElementById('mkt_name').value=m.name;document.getElementById('mkt_open').value=m.open_time?.slice(0,5);document.getElementById('mkt_close').value=m.close_time?.slice(0,5);document.getElementById('mkt_result').value=m.result_time?.slice(0,5);document.getElementById('mkt_status').value=m.status;document.getElementById('marketModal').classList.add('open');}
+async function saveMarket(){const id=document.getElementById('editMarketId').value;const data={name:document.getElementById('mkt_name').value,open_time:document.getElementById('mkt_open').value,close_time:document.getElementById('mkt_close').value,result_time:document.getElementById('mkt_result').value,status:document.getElementById('mkt_status').value};if(id){await api(`/markets/${id}`,'PUT',data);toast('Market updated!');}else{await api('/markets','POST',data);toast('Market added!');}closeModal('marketModal');loadMarkets();}
+async function toggleMarket(id,status){const s=status==='open'?'closed':'open';await api(`/markets/${id}`,'PUT',{status:s});toast(`Market ${s}!`);loadMarkets();}
+async function loadResults(){const mkts=await api('/markets');const open=mkts.filter(m=>m.status!=='resulted'&&m.status!=='cancelled');document.getElementById('resMarket').innerHTML=open.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');const resulted=mkts.filter(m=>m.status==='resulted');document.getElementById('resTable').innerHTML=resulted.length?resulted.map(m=>`<tr><td><b>${m.name}</b></td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--orange)">${m.result_open_pana||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--blue)">${digitSum(m.result_open_pana)}</td><td style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:var(--accent)">${m.result_jodi||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--orange)">${m.result_close_pana||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--blue)">${digitSum(m.result_close_pana)}</td><td style="font-size:12px;color:var(--text2)">${fmtTime(m.resulted_at)}</td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Koi result nahi</td></tr>';}
+function calcResult(){const op=document.getElementById('openPana').value;const cp=document.getElementById('closePana').value;if(op.length===3&&cp.length===3){const os=digitSum(op);const cs=digitSum(cp);document.getElementById('resPreview').value=`Open: ${os} | Jodi: ${os}${cs} | Close: ${cs}`;}}
+function clearResult(){['openPana','closePana','resPreview'].forEach(id=>document.getElementById(id).value='');}
+async function declareResult(){const mId=document.getElementById('resMarket').value;const op=document.getElementById('openPana').value;const cp=document.getElementById('closePana').value;if(!mId){toast('Market select karo','error');return;}if(op.length!==3){toast('Open Pana 3 digit','error');return;}if(cp.length!==3){toast('Close Pana 3 digit','error');return;}if(!confirm(`Result declare?\nOpen: ${op} | Close: ${cp}`))return;const res=await api(`/markets/${mId}/result`,'POST',{openPana:op,closePana:cp});if(res.success){toast(`🎉 Jodi: ${res.jodi} | Winners: ${res.summary?.totalWinners||0} | Payout: ₹${res.summary?.totalPayout||0}`);clearResult();loadResults();}else{toast('Error: '+res.error,'error');}}
+async function loadPDFMarkets(){const mkts=await api('/markets');const sel=document.getElementById('pdfMarketSel');sel.innerHTML='<option value="">-- Select Market --</option>'+mkts.map(m=>`<option value="${m.id}">${m.name} (${m.status})</option>`).join('');}
+async function loadPDFData(){const mId=document.getElementById('pdfMarketSel').value;if(!mId)return;document.getElementById('pdfContent').style.display='block';const types=['open_single','open_pana','jodi','close_single','close_pana'];const labels={'open_single':'Open Single','open_pana':'Open Pana','jodi':'Jodi','close_single':'Close Single','close_pana':'Close Pana'};const icons={'open_single':'1️⃣','open_pana':'🔵','jodi':'🟡','close_single':'🔴','close_pana':'🟠'};document.getElementById('pdfCards').innerHTML=types.map(t=>`<div class="pdf-card" onclick="showBetType('${t}',${mId})"><div class="pdf-icon">${icons[t]}</div><div class="pdf-label">${labels[t]}</div></div>`).join('');}
+async function showBetType(type,mId){document.getElementById('textDataBox').style.display='block';document.getElementById('textData').textContent='Loading...';toast('Loading...','info');}
+function copyTextData(){navigator.clipboard.writeText(document.getElementById('textData').textContent);toast('Copied! 📋');}
+function toggleDataBox(){const b=document.getElementById('textDataBox');b.style.display=b.style.display==='none'?'block':'none';}
+async function loadUsers(){const users=await api('/users');allUsers=users;renderUsers(users);}
+function renderUsers(users){document.getElementById('usersTable').innerHTML=users.map(u=>`<tr><td><b>${u.name}</b></td><td style="font-size:12px">${u.whatsapp_number}</td><td style="font-size:12px;color:var(--text2)">${u.upi_id||'—'}</td><td style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:16px">₹${u.wallet_balance}</td><td><span class="badge badge-${u.status}">${u.status}</span></td><td style="font-size:12px;color:var(--text2)">${fmtTime(u.registered_at)}</td><td><button class="btn btn-blue" onclick='openUserDetail(${JSON.stringify(u)})'>👤</button><button class="btn ${u.status==='active'?'btn-red':'btn-green'}" onclick="blockUser(${u.id},'${u.status==='active'?'block':'unblock'}')">${u.status==='active'?'🚫':'✅'}</button></td></tr>`).join('');}
+function filterUsers(){const q=document.getElementById('userSearch').value.toLowerCase();renderUsers(allUsers.filter(u=>u.name?.toLowerCase().includes(q)||u.whatsapp_number?.includes(q)));}
+function openUserDetail(u){currentUserId=u.id;document.getElementById('userDetail').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div><div style="font-size:11px;color:var(--text2)">NAME</div><b>${u.name}</b></div><div><div style="font-size:11px;color:var(--text2)">PHONE</div><b>${u.whatsapp_number}</b></div><div><div style="font-size:11px;color:var(--text2)">UPI</div><b>${u.upi_id||'—'}</b></div><div><div style="font-size:11px;color:var(--text2)">BALANCE</div><b style="color:var(--green);font-family:Rajdhani,sans-serif;font-size:22px">₹${u.wallet_balance}</b></div></div>`;document.getElementById('walletAdj').value='';document.getElementById('walletReason').value='';document.getElementById('userModal').classList.add('open');}
+async function adjustWallet(){const amount=parseFloat(document.getElementById('walletAdj').value);const reason=document.getElementById('walletReason').value;if(isNaN(amount)||!reason){toast('Amount aur reason dono bharo','error');return;}await api(`/users/${currentUserId}/adjust`,'POST',{amount,reason});toast(`Wallet adjusted!`);closeModal('userModal');loadUsers();}
+async function blockUser(id,action){if(!confirm(`${action}?`))return;await api(`/users/${id}/block`,'POST',{action});toast(`User ${action}ed!`,action==='block'?'error':'success');loadUsers();}
+function loadRates(){const r=JSON.parse(localStorage.getItem('game_rates')||'{}');['open_single','open_pana','jodi','close_single','close_pana','triple_pana'].forEach(k=>{if(r[k])document.getElementById('rate_'+k).value=r[k];});}
+function saveRates(){const r={};['open_single','open_pana','jodi','close_single','close_pana','triple_pana'].forEach(k=>{r[k]=document.getElementById('rate_'+k).value;});localStorage.setItem('game_rates',JSON.stringify(r));toast('Game rates saved!');}
+function previewQR(){const url=document.getElementById('set_qr_url').value;if(!url){toast('QR URL daalo','error');return;}document.getElementById('qrImg').src=url;document.getElementById('qrPreview').style.display='block';}
+function saveUPISettings(){const upi=document.getElementById('set_upi').value;if(!upi){toast('UPI ID daalo','error');return;}localStorage.setItem('upi_settings',JSON.stringify({upi,name:document.getElementById('set_upi_name').value}));toast('UPI saved!');}
+async function changeCredentials(){const username=document.getElementById('set_username').value;const curPass=document.getElementById('set_cur_pass').value;const newPass=document.getElementById('set_new_pass').value;const conPass=document.getElementById('set_con_pass').value;if(newPass&&newPass!==conPass){toast('Passwords match nahi karte','error');return;}if(!curPass){toast('Current password daalo','error');return;}const res=await api('/change-credentials','POST',{username,currentPassword:curPass,newPassword:newPass});if(res.success){toast('Updated! Dobara login karo');setTimeout(doLogout,2000);}else{toast(res.error||'Error','error');}}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});});
+function startAutoRefresh(){setInterval(()=>{if(document.querySelector('.page.active')?.id==='dashboard')loadDashboard();},30000);}
+if(TOKEN){document.getElementById('loginPage').style.display='none';loadDashboard();startAutoRefresh();}
 </script>
 </body>
-</html>  
+</html>
