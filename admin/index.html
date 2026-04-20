@@ -169,7 +169,7 @@ tr:hover td{background:rgba(245,158,11,0.03);}
 <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">🔧</span> Settings</div>
 </div>
 <div class="sidebar-footer">
-<div class="nav-item" onclick="doLogout()" style="color:var(--red)"><span class="icon">🚪</span> Logout</div>
+<div class="nav-item" onclick="doLogout()" style="color:var(--red);border-radius:8px;margin:4px 8px;"><span class="icon">🚪</span> Logout</div>
 </div>
 </div>
 <div class="main">
@@ -395,15 +395,93 @@ async function rejectWithdrawal(id){const reason=prompt('Reject reason:');await 
 async function loadMarkets(){const mkts=await api('/markets');document.getElementById('mktTable').innerHTML=mkts.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.open_time}</td><td>${m.close_time}</td><td>${m.result_time}</td><td><span class="badge badge-${m.status}">${m.status}</span></td><td><button class="btn btn-blue" onclick='editMarket(${JSON.stringify(m)})'>✏️ Edit</button><button class="btn btn-ghost" onclick="toggleMarket(${m.id},'${m.status}')">🔄</button></td></tr>`).join('');}
 function openAddMarket(){document.getElementById('editMarketId').value='';document.getElementById('marketModalTitle').textContent='➕ Add Market';['mkt_name','mkt_open','mkt_close','mkt_result'].forEach(id=>document.getElementById(id).value='');document.getElementById('marketModal').classList.add('open');}
 function editMarket(m){document.getElementById('editMarketId').value=m.id;document.getElementById('marketModalTitle').textContent='✏️ Edit Market';document.getElementById('mkt_name').value=m.name;document.getElementById('mkt_open').value=m.open_time?.slice(0,5);document.getElementById('mkt_close').value=m.close_time?.slice(0,5);document.getElementById('mkt_result').value=m.result_time?.slice(0,5);document.getElementById('mkt_status').value=m.status;document.getElementById('marketModal').classList.add('open');}
-async function saveMarket(){const id=document.getElementById('editMarketId').value;const data={name:document.getElementById('mkt_name').value,open_time:document.getElementById('mkt_open').value,close_time:document.getElementById('mkt_close').value,result_time:document.getElementById('mkt_result').value,status:document.getElementById('mkt_status').value};if(id){await api(`/markets/${id}`,'PUT',data);toast('Market updated!');}else{await api('/markets','POST',data);toast('Market added!');}closeModal('marketModal');loadMarkets();}
+async function saveMarket(){
+  const id=document.getElementById('editMarketId').value;
+  const data={
+    name:document.getElementById('mkt_name').value,
+    open_time:document.getElementById('mkt_open').value+':00',
+    close_time:document.getElementById('mkt_close').value+':00',
+    result_time:document.getElementById('mkt_result').value+':00',
+    status:document.getElementById('mkt_status').value
+  };
+  if(!data.name){toast('Market name daalo','error');return;}
+  if(id){
+    const res=await api(`/markets/${id}`,'PUT',data);
+    if(res.success){toast('Market updated! ✅');}
+    else{toast('Error: '+res.error,'error');}
+  }else{
+    const res=await api('/markets','POST',data);
+    if(res.success){toast('Market added! ✅');}
+    else{toast('Error: '+res.error,'error');}
+  }
+  closeModal('marketModal');
+  loadMarkets();
+}
 async function toggleMarket(id,status){const s=status==='open'?'closed':'open';await api(`/markets/${id}`,'PUT',{status:s});toast(`Market ${s}!`);loadMarkets();}
 async function loadResults(){const mkts=await api('/markets');const open=mkts.filter(m=>m.status!=='resulted'&&m.status!=='cancelled');document.getElementById('resMarket').innerHTML=open.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');const resulted=mkts.filter(m=>m.status==='resulted');document.getElementById('resTable').innerHTML=resulted.length?resulted.map(m=>`<tr><td><b>${m.name}</b></td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--orange)">${m.result_open_pana||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--blue)">${digitSum(m.result_open_pana)}</td><td style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:var(--accent)">${m.result_jodi||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--orange)">${m.result_close_pana||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--blue)">${digitSum(m.result_close_pana)}</td><td style="font-size:12px;color:var(--text2)">${fmtTime(m.resulted_at)}</td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Koi result nahi</td></tr>';}
-function calcResult(){const op=document.getElementById('openPana').value;const cp=document.getElementById('closePana').value;if(op.length===3&&cp.length===3){const os=digitSum(op);const cs=digitSum(cp);document.getElementById('resPreview').value=`Open: ${os} | Jodi: ${os}${cs} | Close: ${cs}`;}}
+function calcResult(){const op=document.getElementById('openPana').value;const cp=document.getElementById('closePana').value;if(op.length===3&&cp.length===3){const os=digitSum(op);const cs=digitSum(cp);document.getElementById('resPreview').value=`Open Pana: ${op} | Open Ank: ${os} | Jodi: ${os}${cs} | Close Pana: ${cp} | Close Ank: ${cs}`;}}
 function clearResult(){['openPana','closePana','resPreview'].forEach(id=>document.getElementById(id).value='');}
 async function declareResult(){const mId=document.getElementById('resMarket').value;const op=document.getElementById('openPana').value;const cp=document.getElementById('closePana').value;if(!mId){toast('Market select karo','error');return;}if(op.length!==3){toast('Open Pana 3 digit','error');return;}if(cp.length!==3){toast('Close Pana 3 digit','error');return;}if(!confirm(`Result declare?\nOpen: ${op} | Close: ${cp}`))return;const res=await api(`/markets/${mId}/result`,'POST',{openPana:op,closePana:cp});if(res.success){toast(`🎉 Jodi: ${res.jodi} | Winners: ${res.summary?.totalWinners||0} | Payout: ₹${res.summary?.totalPayout||0}`);clearResult();loadResults();}else{toast('Error: '+res.error,'error');}}
 async function loadPDFMarkets(){const mkts=await api('/markets');const sel=document.getElementById('pdfMarketSel');sel.innerHTML='<option value="">-- Select Market --</option>'+mkts.map(m=>`<option value="${m.id}">${m.name} (${m.status})</option>`).join('');}
-async function loadPDFData(){const mId=document.getElementById('pdfMarketSel').value;if(!mId)return;document.getElementById('pdfContent').style.display='block';const types=['open_single','open_pana','jodi','close_single','close_pana'];const labels={'open_single':'Open Single','open_pana':'Open Pana','jodi':'Jodi','close_single':'Close Single','close_pana':'Close Pana'};const icons={'open_single':'1️⃣','open_pana':'🔵','jodi':'🟡','close_single':'🔴','close_pana':'🟠'};document.getElementById('pdfCards').innerHTML=types.map(t=>`<div class="pdf-card" onclick="showBetType('${t}',${mId})"><div class="pdf-icon">${icons[t]}</div><div class="pdf-label">${labels[t]}</div></div>`).join('');}
-async function showBetType(type,mId){document.getElementById('textDataBox').style.display='block';document.getElementById('textData').textContent='Loading...';toast('Loading...','info');}
+async function loadPDFData(){
+  const mId=document.getElementById('pdfMarketSel').value;
+  if(!mId)return;
+  document.getElementById('pdfContent').style.display='block';
+  const types=['open_single','open_pana','jodi','close_single','close_pana'];
+  const labels={'open_single':'Open Single','open_pana':'Open Pana','jodi':'Jodi','close_single':'Close Single','close_pana':'Close Pana'};
+  const icons={'open_single':'1️⃣','open_pana':'🔵','jodi':'🟡','close_single':'🔴','close_pana':'🟠'};
+  document.getElementById('pdfCards').innerHTML=types.map(t=>`
+    <div class="pdf-card" onclick="showBetType('${t}',${mId})">
+      <div class="pdf-icon">${icons[t]}</div>
+      <div class="pdf-label">${labels[t]}</div>
+      <div style="font-size:10px;color:var(--accent);margin-top:6px">Tap to view</div>
+    </div>`).join('');
+}
+
+async function showBetType(type,mId){
+  toast('Data load ho raha hai...','info');
+  document.getElementById('textDataBox').style.display='block';
+  document.getElementById('textData').textContent='Loading...';
+  try{
+    const bets=await api(`/bets/by-market/${mId}`);
+    const filtered=bets.filter(b=>b.bet_type===type);
+    const labels={'open_single':'OPEN SINGLE','open_pana':'OPEN PANA','jodi':'JODI','close_single':'CLOSE SINGLE','close_pana':'CLOSE PANA'};
+    let text=`╔════════════════════════╗\n`;
+    text+=`║  ${(labels[type]||type).padEnd(22)}║\n`;
+    text+=`╚════════════════════════╝\n\n`;
+    text+=`NUMBER    │ AMOUNT\n`;
+    text+=`──────────┼───────────────\n`;
+    if(!filtered.length){text+='  Koi bet nahi\n';}
+    else{filtered.forEach(b=>{text+=` ${String(b.number).padEnd(9)}│ Rs. ${parseFloat(b.total_amount).toLocaleString('en-IN')}\n`;});}
+    const total=filtered.reduce((s,b)=>s+parseFloat(b.total_amount),0);
+    text+=`──────────┼───────────────\n`;
+    text+=` TOTAL    │ Rs. ${total.toLocaleString('en-IN')}\n`;
+    document.getElementById('textData').textContent=text;
+
+    // Download PDF button
+    const existing=document.getElementById('downloadPDFBtn');
+    if(existing)existing.remove();
+    const btn=document.createElement('button');
+    btn.id='downloadPDFBtn';
+    btn.className='btn btn-primary';
+    btn.style.marginTop='12px';
+    btn.innerHTML='⬇️ Download as Text File';
+    btn.onclick=()=>{
+      const blob=new Blob([text],{type:'text/plain'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=`${labels[type]||type}_bets.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('File download ho rahi hai!');
+    };
+    document.getElementById('textDataBox').appendChild(btn);
+  }catch(e){
+    document.getElementById('textData').textContent='Error loading data';
+    toast('Data load nahi hua','error');
+  }
+}
 function copyTextData(){navigator.clipboard.writeText(document.getElementById('textData').textContent);toast('Copied! 📋');}
 function toggleDataBox(){const b=document.getElementById('textDataBox');b.style.display=b.style.display==='none'?'block':'none';}
 async function loadUsers(){const users=await api('/users');allUsers=users;renderUsers(users);}
