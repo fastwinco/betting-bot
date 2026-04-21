@@ -2,503 +2,753 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FastWin Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0f1e;--bg2:#111827;--bg3:#1f2937;--border:#2d3748;--text:#f1f5f9;--text2:#94a3b8;--accent:#f59e0b;--accent2:#fbbf24;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;--orange:#f97316;--card:#111827;--sidebar:#0d1117;--radius:12px;}
-[data-theme="light"]{--bg:#f0f4ff;--bg2:#ffffff;--bg3:#e8edf5;--border:#d1d9e6;--text:#1a202c;--text2:#4a5568;--card:#ffffff;--sidebar:#1a1f35;}
+:root{--bg:#0a0f1e;--bg2:#111827;--bg3:#1f2937;--border:#2d3748;--text:#f1f5f9;--text2:#94a3b8;--accent:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;--orange:#f97316;--card:#111827;--sidebar:#0d1117;}
+[data-theme="light"]{--bg:#f0f4ff;--bg2:#fff;--bg3:#e8edf5;--border:#d1d9e6;--text:#1a202c;--text2:#4a5568;--card:#fff;--sidebar:#1a1f35;}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .sidebar{width:240px;background:var(--sidebar);height:100vh;position:fixed;left:0;top:0;display:flex;flex-direction:column;border-right:1px solid rgba(245,158,11,0.2);z-index:100;transition:transform .3s;}
-.brand{padding:20px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;gap:10px;}
-.brand-icon{font-size:28px;}
-.brand-text{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#000;letter-spacing:1px;}
-.brand-sub{font-size:10px;color:rgba(0,0,0,0.6);font-weight:500;letter-spacing:2px;text-transform:uppercase;}
-.nav{flex:1;padding:12px 0;overflow-y:auto;}
-.nav-section{padding:8px 16px 4px;font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-weight:600;}
-.nav-item{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .2s;border-left:3px solid transparent;}
-.nav-item:hover{background:rgba(245,158,11,0.08);color:var(--text);}
-.nav-item.active{background:rgba(245,158,11,0.12);color:var(--accent);border-left-color:var(--accent);}
-.nav-item .icon{font-size:18px;width:22px;text-align:center;}
-.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
-.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);}
+.brand{padding:18px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;gap:10px;}
+.brand-text{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#000;}
+.brand-sub{font-size:10px;color:rgba(0,0,0,0.6);letter-spacing:2px;text-transform:uppercase;}
+.nav{flex:1;padding:8px 0;overflow-y:auto;}
+.nav-sec{padding:8px 16px 4px;font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.ni{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .2s;border-left:3px solid transparent;}
+.ni:hover{background:rgba(245,158,11,0.08);color:var(--text);}
+.ni.active{background:rgba(245,158,11,0.12);color:var(--accent);border-left-color:var(--accent);}
+.ni .ic{font-size:17px;width:20px;text-align:center;}
+.nbadge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;min-width:18px;text-align:center;}
+.sfooter{padding:12px 8px;border-top:1px solid var(--border);}
 .main{margin-left:240px;min-height:100vh;}
-.topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+.topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;}
 .topbar-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}
-.topbar-actions{display:flex;align-items:center;gap:10px;}
-.icon-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
-.hamburger{display:none;}
-.page{display:none;padding:24px;}
+.ib{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.ib:hover{border-color:var(--accent);color:var(--accent);}
+.hbg{display:none;}
+.page{display:none;padding:20px;}
 .page.active{display:block;}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
-.stat-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s;}
-.stat-card:hover{transform:translateY(-2px);}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-.stat-card.gold::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
-.stat-card.green::before{background:linear-gradient(90deg,var(--green),#34d399);}
-.stat-card.red::before{background:linear-gradient(90deg,var(--red),#f87171);}
-.stat-card.blue::before{background:linear-gradient(90deg,var(--blue),#60a5fa);}
-.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px;}
-.stat-val{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;line-height:1;}
-.stat-card.gold .stat-val{color:var(--accent);}
-.stat-card.green .stat-val{color:var(--green);}
-.stat-card.red .stat-val{color:var(--red);}
-.stat-card.blue .stat-val{color:var(--blue);}
-.stat-sub{font-size:12px;color:var(--text2);margin-top:4px;}
-.stat-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:36px;opacity:.1;}
-.table-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:20px;}
-.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
-.table-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.sc{background:var(--card);border-radius:10px;padding:18px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc.g::before{background:linear-gradient(90deg,#f59e0b,#fbbf24);}
+.sc.gr::before{background:linear-gradient(90deg,#10b981,#34d399);}
+.sc.b::before{background:linear-gradient(90deg,#3b82f6,#60a5fa);}
+.sc.r::before{background:linear-gradient(90deg,#ef4444,#f87171);}
+.sl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;}
+.sv{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;}
+.sc.g .sv{color:var(--accent);}
+.sc.gr .sv{color:var(--green);}
+.sc.b .sv{color:var(--blue);}
+.sc.r .sv{color:var(--red);}
+.tc{background:var(--card);border-radius:10px;border:1px solid var(--border);overflow:hidden;margin-bottom:18px;}
+.th{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.tt{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;}
 table{width:100%;border-collapse:collapse;}
-th{padding:11px 16px;text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600;background:var(--bg3);}
-td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+th{padding:10px 14px;text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;background:var(--bg3);}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
-tr:hover td{background:rgba(245,158,11,0.03);}
-.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block;}
-.badge-pending{background:rgba(245,158,11,0.15);color:var(--accent);}
-.badge-approved,.badge-paid,.badge-active,.badge-won{background:rgba(16,185,129,0.15);color:var(--green);}
-.badge-rejected,.badge-blocked,.badge-lost{background:rgba(239,68,68,0.15);color:var(--red);}
-.badge-open{background:rgba(16,185,129,0.15);color:var(--green);}
-.badge-closed{background:rgba(59,130,246,0.15);color:var(--blue);}
-.badge-resulted{background:rgba(139,92,246,0.15);color:var(--purple);}
-.badge-sms{background:rgba(16,185,129,0.15);color:var(--green);}
-.badge-screenshot{background:rgba(59,130,246,0.15);color:var(--blue);}
-.badge-manual{background:rgba(245,158,11,0.15);color:var(--accent);}
-.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
-.btn:hover{opacity:.85;transform:translateY(-1px);}
-.btn-primary{background:var(--accent);color:#000;}
-.btn-green{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);}
-.btn-red{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);}
-.btn-blue{background:rgba(59,130,246,0.15);color:var(--blue);border:1px solid rgba(59,130,246,0.3);}
-.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+tr:hover td{background:rgba(245,158,11,0.02);}
+.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block;}
+.bp{background:rgba(245,158,11,0.15);color:var(--accent);}
+.ba,.bpa,.bac,.bw{background:rgba(16,185,129,0.15);color:var(--green);}
+.br,.bbl,.blo{background:rgba(239,68,68,0.15);color:var(--red);}
+.bop{background:rgba(16,185,129,0.15);color:var(--green);}
+.bcl{background:rgba(59,130,246,0.15);color:var(--blue);}
+.bre{background:rgba(139,92,246,0.15);color:var(--purple);}
+.bsm{background:rgba(16,185,129,0.15);color:var(--green);}
+.bsc{background:rgba(59,130,246,0.15);color:var(--blue);}
+.bma{background:rgba(245,158,11,0.15);color:var(--accent);}
+.btn{padding:7px 14px;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:5px;}
+.btn:hover{opacity:.85;}
+.btn-p{background:var(--accent);color:#000;}
+.btn-g{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);}
+.btn-r{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);}
+.btn-b{background:rgba(59,130,246,0.15);color:var(--blue);border:1px solid rgba(59,130,246,0.3);}
+.btn-gh{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
 .btn+.btn{margin-left:4px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.form-group{display:flex;flex-direction:column;gap:6px;}
-.form-group label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
-.form-group input,.form-group select{padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:border .2s;}
-.form-group input:focus,.form-group select:focus{border-color:var(--accent);}
-.form-actions{margin-top:20px;display:flex;gap:10px;}
-.section-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:24px;margin-bottom:20px;}
-.section-title{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;color:var(--accent);}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fgr{display:flex;flex-direction:column;gap:5px;}
+.fgr label{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;}
+.fgr input,.fgr select{padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;}
+.fgr input:focus,.fgr select:focus{border-color:var(--accent);}
+.fa{margin-top:16px;display:flex;gap:10px;}
+.scard{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:20px;margin-bottom:18px;}
+.stitle{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;margin-bottom:16px;color:var(--accent);}
 #loginPage{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;}
-.login-wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;padding:24px;}
-.login-brand{text-align:center;margin-bottom:32px;}
-.login-brand-icon{font-size:48px;margin-bottom:8px;}
-.login-brand-name{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:var(--accent);letter-spacing:2px;}
-.login-brand-sub{font-size:12px;color:var(--text2);letter-spacing:3px;text-transform:uppercase;}
-.login-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;}
-.login-card h2{font-size:20px;font-weight:600;margin-bottom:24px;text-align:center;}
-.login-card input{width:100%;padding:13px 16px;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;outline:none;}
-.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;}
-.login-err{color:var(--red);font-size:13px;margin-top:12px;text-align:center;}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
-.modal-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px;color:var(--accent);}
-.modal-close{float:right;cursor:pointer;color:var(--text2);font-size:20px;}
-.toast-container{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;}
-.toast{padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;animation:slideIn .3s ease;min-width:250px;display:flex;align-items:center;gap:10px;}
-.toast-success{background:rgba(16,185,129,0.95);color:#fff;}
-.toast-error{background:rgba(239,68,68,0.95);color:#fff;}
-.toast-info{background:rgba(59,130,246,0.95);color:#fff;}
-@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-.rate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.rate-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;}
-.rate-name{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px;text-transform:uppercase;}
-.rate-input{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-size:20px;font-family:'Rajdhani',sans-serif;font-weight:700;outline:none;text-align:center;}
-.data-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:monospace;font-size:13px;white-space:pre-wrap;max-height:300px;overflow-y:auto;}
-.pdf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
-.pdf-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;}
-.pdf-card:hover{border-color:var(--accent);transform:translateY(-2px);}
-.pdf-icon{font-size:32px;margin-bottom:8px;}
-.pdf-label{font-size:12px;font-weight:600;color:var(--text2);}
-.mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;display:none;}
-.mobile-overlay.open{display:block;}
+.lwrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:380px;padding:20px;}
+.lbrand{text-align:center;margin-bottom:28px;}
+.licon{font-size:44px;margin-bottom:6px;}
+.lname{font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;color:var(--accent);letter-spacing:2px;}
+.lsub{font-size:11px;color:var(--text2);letter-spacing:3px;text-transform:uppercase;}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;}
+.lcard h2{font-size:18px;font-weight:600;margin-bottom:20px;text-align:center;}
+.lcard input{width:100%;padding:12px 14px;margin-bottom:12px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;outline:none;}
+.lcard input:focus{border-color:var(--accent);}
+.lbtn{width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:9px;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:1px;}
+.lerr{color:var(--red);font-size:12px;margin-top:10px;text-align:center;}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.mo.open{display:flex;}
+.mdl{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
+.mtitle{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;margin-bottom:18px;color:var(--accent);}
+.mclose{float:right;cursor:pointer;color:var(--text2);font-size:18px;line-height:1;}
+.toasts{position:fixed;top:14px;right:14px;z-index:999;display:flex;flex-direction:column;gap:7px;}
+.toast{padding:11px 16px;border-radius:9px;font-size:13px;font-weight:500;animation:sin .3s ease;min-width:240px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,0.3);}
+.ts{background:rgba(16,185,129,0.95);color:#fff;}
+.te{background:rgba(239,68,68,0.95);color:#fff;}
+.ti{background:rgba(59,130,246,0.95);color:#fff;}
+@keyframes sin{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.ri{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:14px;}
+.rn{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:7px;text-transform:uppercase;}
+.rinput{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--accent);font-size:20px;font-family:'Rajdhani',sans-serif;font-weight:700;outline:none;text-align:center;}
+.rinput:focus{border-color:var(--accent);}
+.dbox{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:14px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:320px;overflow-y:auto;line-height:1.6;}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.pcard{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;}
+.pcard:hover{border-color:var(--accent);transform:translateY(-2px);}
+.picon{font-size:28px;margin-bottom:6px;}
+.plabel{font-size:11px;font-weight:600;color:var(--text2);}
+.mov{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;display:none;}
+.mov.open{display:block;}
 @media(max-width:768px){
 .sidebar{transform:translateX(-100%);width:260px;}
 .sidebar.open{transform:translateX(0);}
 .main{margin-left:0;}
-.stat-grid{grid-template-columns:repeat(2,1fr);}
-.pdf-grid{grid-template-columns:repeat(2,1fr);}
-.rate-grid{grid-template-columns:repeat(2,1fr);}
-.form-grid{grid-template-columns:1fr;}
-.hamburger{display:flex!important;}
-.page{padding:16px;}
-.topbar{padding:0 16px;}
+.sgrid{grid-template-columns:repeat(2,1fr);}
+.pgrid{grid-template-columns:repeat(2,1fr);}
+.rg{grid-template-columns:repeat(2,1fr);}
+.fg{grid-template-columns:1fr;}
+.hbg{display:flex!important;}
+.page{padding:14px;}
+.topbar{padding:0 14px;}
 }
 </style>
 </head>
 <body>
-<div class="toast-container" id="toastContainer"></div>
-<div class="mobile-overlay" id="mobileOverlay" onclick="closeSidebar()"></div>
+<div class="toasts" id="TC"></div>
+<div class="mov" id="MOV" onclick="cSB()"></div>
 <div id="loginPage">
-<div class="login-wrap">
-<div class="login-brand">
-<div class="login-brand-icon">⚡</div>
-<div class="login-brand-name">FASTWIN</div>
-<div class="login-brand-sub">Admin Dashboard</div>
+<div class="lwrap">
+<div class="lbrand">
+<div class="licon">⚡</div>
+<div class="lname">FASTWIN</div>
+<div class="lsub">Admin Dashboard</div>
 </div>
-<div class="login-card">
+<div class="lcard">
 <h2>🔐 Secure Login</h2>
-<input type="text" id="loginUser" placeholder="Username" value="admin">
-<input type="password" id="loginPass" placeholder="Password">
-<button class="login-btn" onclick="doLogin()">LOGIN →</button>
-<div class="login-err" id="loginErr"></div>
+<input type="text" id="LU" placeholder="Username" value="admin">
+<input type="password" id="LP" placeholder="Password">
+<button class="lbtn" onclick="doLogin()">LOGIN →</button>
+<div class="lerr" id="LE"></div>
 </div>
 </div>
 </div>
-<div class="sidebar" id="sidebar">
+<div class="sidebar" id="SB">
 <div class="brand">
-<div class="brand-icon">⚡</div>
+<div style="font-size:26px">⚡</div>
 <div><div class="brand-text">FASTWIN</div><div class="brand-sub">Admin Panel</div></div>
 </div>
 <div class="nav">
-<div class="nav-section">Main</div>
-<div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</div>
-<div class="nav-item" onclick="showPage('deposits',this)"><span class="icon">💰</span> Deposits <span class="nav-badge" id="depBadge">0</span></div>
-<div class="nav-item" onclick="showPage('withdrawals',this)"><span class="icon">🏧</span> Withdrawals <span class="nav-badge" id="wdBadge">0</span></div>
-<div class="nav-section">Games</div>
-<div class="nav-item" onclick="showPage('markets',this)"><span class="icon">🕐</span> Markets</div>
-<div class="nav-item" onclick="showPage('results',this)"><span class="icon">🎲</span> Results</div>
-<div class="nav-item" onclick="showPage('pdfs',this)"><span class="icon">📄</span> Bet PDFs</div>
-<div class="nav-section">Management</div>
-<div class="nav-item" onclick="showPage('users',this)"><span class="icon">👥</span> Users</div>
-<div class="nav-item" onclick="showPage('rates',this)"><span class="icon">⚙️</span> Game Rates</div>
-<div class="nav-item" onclick="showPage('settings',this)"><span class="icon">🔧</span> Settings</div>
+<div class="nav-sec">Main</div>
+<div class="ni active" onclick="SP('dashboard',this)"><span class="ic">📊</span>Dashboard</div>
+<div class="ni" onclick="SP('deposits',this)"><span class="ic">💰</span>Deposits<span class="nbadge" id="DB">0</span></div>
+<div class="ni" onclick="SP('withdrawals',this)"><span class="ic">🏧</span>Withdrawals<span class="nbadge" id="WB">0</span></div>
+<div class="nav-sec">Games</div>
+<div class="ni" onclick="SP('markets',this)"><span class="ic">🕐</span>Markets</div>
+<div class="ni" onclick="SP('results',this)"><span class="ic">🎲</span>Results</div>
+<div class="ni" onclick="SP('pdfs',this)"><span class="ic">📄</span>Bet PDFs</div>
+<div class="nav-sec">Management</div>
+<div class="ni" onclick="SP('users',this)"><span class="ic">👥</span>Users</div>
+<div class="ni" onclick="SP('rates',this)"><span class="ic">⚙️</span>Game Rates</div>
+<div class="ni" onclick="SP('settings',this)"><span class="ic">🔧</span>Settings</div>
 </div>
-<div class="sidebar-footer">
-<div class="nav-item" onclick="doLogout()" style="color:var(--red);border-radius:8px;margin:4px 8px;"><span class="icon">🚪</span> Logout</div>
+<div class="sfooter">
+<div class="ni" onclick="doLogout()" style="color:var(--red);border-radius:8px"><span class="ic">🚪</span>Logout</div>
 </div>
 </div>
 <div class="main">
 <div class="topbar">
-<div style="display:flex;align-items:center;gap:12px">
-<button class="icon-btn hamburger" onclick="toggleSidebar()">☰</button>
-<div class="topbar-title" id="pageTitle">📊 Dashboard</div>
+<div style="display:flex;align-items:center;gap:10px">
+<button class="ib hbg" onclick="tSB()">☰</button>
+<div class="topbar-title" id="PT">📊 Dashboard</div>
 </div>
-<div class="topbar-actions">
-<button class="icon-btn" onclick="refreshPage()">🔄</button>
-<button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
-<button class="icon-btn" onclick="showPage('settings',null)">⚙️</button>
+<div style="display:flex;gap:8px">
+<button class="ib" onclick="rPage()">🔄</button>
+<button class="ib" onclick="tTheme()" id="TB">🌙</button>
+<button class="ib" onclick="SP('settings',null)">⚙️</button>
 </div>
 </div>
 <div id="dashboard" class="page active">
-<div class="stat-grid">
-<div class="stat-card gold"><div class="stat-label">Total Users</div><div class="stat-val" id="s_users">—</div><div class="stat-sub">Registered</div><div class="stat-icon">👥</div></div>
-<div class="stat-card green"><div class="stat-label">Today Deposit</div><div class="stat-val" id="s_dep">—</div><div class="stat-sub">Approved</div><div class="stat-icon">💰</div></div>
-<div class="stat-card blue"><div class="stat-label">Today Bets</div><div class="stat-val" id="s_bets">—</div><div class="stat-sub">Placed</div><div class="stat-icon">🎯</div></div>
-<div class="stat-card red"><div class="stat-label">Pending WD</div><div class="stat-val" id="s_wd">—</div><div class="stat-sub">Awaiting</div><div class="stat-icon">🏧</div></div>
+<div class="sgrid">
+<div class="sc g"><div class="sl">Total Users</div><div class="sv" id="SU">—</div></div>
+<div class="sc gr"><div class="sl">Today Deposit</div><div class="sv" id="SD">—</div></div>
+<div class="sc b"><div class="sl">Today Bets</div><div class="sv" id="SB2">—</div></div>
+<div class="sc r"><div class="sl">Pending WD</div><div class="sv" id="SW">—</div></div>
 </div>
-<div class="table-card">
-<div class="table-header"><div class="table-title">⏳ Pending Deposits</div><button class="btn btn-ghost" onclick="loadDashboard()">🔄</button></div>
+<div class="tc">
+<div class="th"><div class="tt">⏳ Pending Deposits</div><button class="btn btn-gh" onclick="lDB()">🔄</button></div>
 <table><thead><tr><th>User</th><th>Amount</th><th>Source</th><th>Time</th><th>Action</th></tr></thead>
-<tbody id="dashDeps"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Loading...</td></tr></tbody></table>
+<tbody id="DD"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text2)">Loading...</td></tr></tbody></table>
 </div>
-<div class="table-card">
-<div class="table-header"><div class="table-title">⏳ Pending Withdrawals</div><button class="btn btn-ghost" onclick="loadDashboard()">🔄</button></div>
+<div class="tc">
+<div class="th"><div class="tt">⏳ Pending Withdrawals</div><button class="btn btn-gh" onclick="lDB()">🔄</button></div>
 <table><thead><tr><th>User</th><th>Amount</th><th>UPI</th><th>Time</th><th>Action</th></tr></thead>
-<tbody id="dashWds"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Loading...</td></tr></tbody></table>
+<tbody id="DW"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text2)">Loading...</td></tr></tbody></table>
 </div>
 </div>
+
 <div id="deposits" class="page">
-<div class="table-card">
-<div class="table-header"><div class="table-title">💰 Deposits</div><button class="btn btn-ghost" onclick="loadDeposits()">🔄</button></div>
+<div class="tc">
+<div class="th"><div class="tt">💰 All Deposits</div><button class="btn btn-gh" onclick="lDeps()">🔄</button></div>
 <table><thead><tr><th>User</th><th>Amount</th><th>UTR</th><th>Source</th><th>Status</th><th>Time</th><th>Action</th></tr></thead>
-<tbody id="depsTable"></tbody></table>
+<tbody id="DT"></tbody></table>
 </div>
 </div>
+
 <div id="withdrawals" class="page">
-<div class="table-card">
-<div class="table-header"><div class="table-title">🏧 Withdrawals</div><button class="btn btn-ghost" onclick="loadWithdrawals()">🔄</button></div>
+<div class="tc">
+<div class="th"><div class="tt">🏧 All Withdrawals</div><button class="btn btn-gh" onclick="lWds()">🔄</button></div>
 <table><thead><tr><th>User</th><th>Amount</th><th>UPI</th><th>UTR</th><th>Status</th><th>Time</th><th>Action</th></tr></thead>
-<tbody id="wdsTable"></tbody></table>
+<tbody id="WT"></tbody></table>
 </div>
 </div>
+
 <div id="markets" class="page">
-<div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-<button class="btn btn-primary" onclick="openAddMarket()">➕ Add Market</button>
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+<button class="btn btn-p" onclick="oAM()">➕ Add Market</button>
 </div>
-<div class="table-card">
-<div class="table-header"><div class="table-title">🕐 Markets</div><button class="btn btn-ghost" onclick="loadMarkets()">🔄</button></div>
+<div class="tc">
+<div class="th"><div class="tt">🕐 Markets</div><button class="btn btn-gh" onclick="lMkts()">🔄</button></div>
 <table><thead><tr><th>Name</th><th>Open</th><th>Close</th><th>Result</th><th>Status</th><th>Action</th></tr></thead>
-<tbody id="mktTable"></tbody></table>
+<tbody id="MT"></tbody></table>
 </div>
 </div>
+
 <div id="results" class="page">
-<div class="section-card">
-<div class="section-title">🎲 Declare Result</div>
-<div class="form-grid">
-<div class="form-group"><label>Market</label><select id="resMarket" onchange="calcResult()"></select></div>
-<div class="form-group"><label>Open Pana (3 digit)</label><input type="number" id="openPana" placeholder="123" oninput="calcResult()"></div>
-<div class="form-group"><label>Close Pana (3 digit)</label><input type="number" id="closePana" placeholder="456" oninput="calcResult()"></div>
-<div class="form-group"><label>Auto Preview</label><input type="text" id="resPreview" readonly style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:18px"></div>
+<div class="scard">
+<div class="stitle">🎲 Declare Result</div>
+<div class="fg">
+<div class="fgr"><label>Market</label><select id="RM" onchange="cRes()"></select></div>
+<div class="fgr"><label>Open Pana (3 digit)</label><input type="number" id="OP" placeholder="e.g. 123" oninput="cRes()"></div>
+<div class="fgr"><label>Close Pana (3 digit)</label><input type="number" id="CP" placeholder="e.g. 456" oninput="cRes()"></div>
+<div class="fgr"><label>Preview (Auto)</label><input type="text" id="RP" readonly style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:16px"></div>
 </div>
-<div class="form-actions">
-<button class="btn btn-primary" onclick="declareResult()">✅ Declare Result</button>
-<button class="btn btn-ghost" onclick="clearResult()">🔄 Clear</button>
+<div class="fa">
+<button class="btn btn-p" onclick="dRes()">✅ Declare Result</button>
+<button class="btn btn-gh" onclick="clRes()">🔄 Clear</button>
 </div>
 </div>
-<div class="table-card">
-<div class="table-header"><div class="table-title">📋 Recent Results</div></div>
+<div class="tc">
+<div class="th"><div class="tt">📋 Recent Results</div></div>
 <table><thead><tr><th>Market</th><th>Open Pana</th><th>Open Ank</th><th>Jodi</th><th>Close Pana</th><th>Close Ank</th><th>Date</th></tr></thead>
-<tbody id="resTable"></tbody></table>
+<tbody id="RT"></tbody></table>
 </div>
 </div>
+
 <div id="pdfs" class="page">
-<div class="section-card">
-<div class="section-title">📄 Market Bet PDFs & Data</div>
-<div class="form-group" style="max-width:300px;margin-bottom:20px">
+<div class="scard">
+<div class="stitle">📄 Market Bet Data & Download</div>
+<div class="fgr" style="max-width:300px;margin-bottom:18px">
 <label>Select Market</label>
-<select id="pdfMarketSel" onchange="loadPDFData()"><option value="">-- Select Market --</option></select>
+<select id="PS" onchange="lPDF()"><option value="">-- Select Market --</option></select>
 </div>
-<div id="pdfContent" style="display:none">
-<div class="pdf-grid" id="pdfCards"></div>
-<div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
-<button class="btn btn-blue" onclick="copyTextData()">📋 Copy Text Data</button>
-<button class="btn btn-ghost" onclick="toggleDataBox()">🔢 Show/Hide Data</button>
+<div id="PC" style="display:none">
+<div class="pgrid" id="PG"></div>
+<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+<button class="btn btn-b" onclick="cpyData()">📋 Copy Text</button>
+<button class="btn btn-gh" onclick="tDB2()">👁️ Show/Hide</button>
 </div>
-<div id="textDataBox" style="margin-top:16px;display:none">
-<div class="data-box" id="textData"></div>
+<div id="PDB" style="margin-top:14px;display:none">
+<div class="dbox" id="PD"></div>
+<button class="btn btn-p" style="margin-top:10px" onclick="dlFile()">⬇️ Download File</button>
 </div>
 </div>
 </div>
 </div>
+
 <div id="users" class="page">
-<div class="table-card">
-<div class="table-header">
-<div class="table-title">👥 Users</div>
+<div class="tc">
+<div class="th">
+<div class="tt">👥 Users</div>
 <div style="display:flex;gap:8px">
-<input type="text" id="userSearch" placeholder="Search..." oninput="filterUsers()" style="padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px">
-<button class="btn btn-ghost" onclick="loadUsers()">🔄</button>
+<input type="text" id="US" placeholder="Search..." oninput="fUsers()" style="padding:7px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;width:160px;outline:none">
+<button class="btn btn-gh" onclick="lUsers()">🔄</button>
 </div>
 </div>
 <table><thead><tr><th>Name</th><th>WhatsApp</th><th>UPI</th><th>Balance</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
-<tbody id="usersTable"></tbody></table>
+<tbody id="UT"></tbody></table>
 </div>
 </div>
+
 <div id="rates" class="page">
-<div class="section-card">
-<div class="section-title">⚙️ Game Rates</div>
-<div class="rate-grid">
-<div class="rate-item"><div class="rate-name">Open Single</div><input type="number" class="rate-input" id="rate_open_single" value="9" step="0.1"></div>
-<div class="rate-item"><div class="rate-name">Open Pana</div><input type="number" class="rate-input" id="rate_open_pana" value="150" step="0.1"></div>
-<div class="rate-item"><div class="rate-name">Jodi</div><input type="number" class="rate-input" id="rate_jodi" value="90" step="0.1"></div>
-<div class="rate-item"><div class="rate-name">Close Single</div><input type="number" class="rate-input" id="rate_close_single" value="9" step="0.1"></div>
-<div class="rate-item"><div class="rate-name">Close Pana</div><input type="number" class="rate-input" id="rate_close_pana" value="300" step="0.1"></div>
-<div class="rate-item"><div class="rate-name">Triple Pana</div><input type="number" class="rate-input" id="rate_triple_pana" value="1000" step="0.1"></div>
+<div class="scard">
+<div class="stitle">⚙️ Game Rates (Multiplier)</div>
+<div class="rg">
+<div class="ri"><div class="rn">Open Single</div><input type="number" class="rinput" id="ROS" value="9" step="0.1"><div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">× multiplier</div></div>
+<div class="ri"><div class="rn">Open Pana</div><input type="number" class="rinput" id="ROP" value="150" step="0.1"><div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">× multiplier</div></div>
+<div class="ri"><div class="rn">Jodi</div><input type="number" class="rinput" id="RJ" value="90" step="0.1"><div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">× multiplier</div></div>
+<div class="ri"><div class="rn">Close Single</div><input type="number" class="rinput" id="RCS" value="9" step="0.1"><div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">× multiplier</div></div>
+<div class="ri"><div class="rn">Close Pana</div><input type="number" class="rinput" id="RCP" value="300" step="0.1"><div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">× multiplier</div></div>
+<div class="ri"><div class="rn">Triple Pana</div><input type="number" class="rinput" id="RTP" value="1000" step="0.1"><div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">× multiplier</div></div>
 </div>
-<div class="form-actions">
-<button class="btn btn-primary" onclick="saveRates()">💾 Save Rates</button>
-<button class="btn btn-ghost" onclick="loadRates()">🔄 Reset</button>
+<div class="fa">
+<button class="btn btn-p" onclick="sRates()">💾 Save Rates</button>
+<button class="btn btn-gh" onclick="lRates()">🔄 Reset</button>
 </div>
 </div>
 </div>
+
 <div id="settings" class="page">
-<div class="section-card">
-<div class="section-title">📱 UPI Settings</div>
-<div class="form-grid">
-<div class="form-group"><label>UPI ID</label><input type="text" id="set_upi" placeholder="yourname@upi"></div>
-<div class="form-group"><label>Display Name</label><input type="text" id="set_upi_name" placeholder="Betting Admin"></div>
+<div class="scard">
+<div class="stitle">📱 UPI Settings</div>
+<div class="fg">
+<div class="fgr"><label>UPI ID</label><input type="text" id="SUPI" placeholder="yourname@upi"></div>
+<div class="fgr"><label>Display Name</label><input type="text" id="SUN" placeholder="Betting Admin"></div>
 </div>
-<div class="form-group" style="margin-top:12px"><label>QR Code URL</label><input type="text" id="set_qr_url" placeholder="https://...QR image URL..."></div>
-<div id="qrPreview" style="margin-top:12px;display:none"><img id="qrImg" src="" style="width:150px;height:150px;border-radius:12px;border:2px solid var(--accent)"></div>
-<div class="form-actions">
-<button class="btn btn-primary" onclick="saveUPISettings()">💾 Save UPI</button>
-<button class="btn btn-blue" onclick="previewQR()">👁️ Preview QR</button>
-</div>
-</div>
-<div class="section-card">
-<div class="section-title">🔐 Change Credentials</div>
-<div class="form-grid">
-<div class="form-group"><label>New Username</label><input type="text" id="set_username" placeholder="New username"></div>
-<div class="form-group"><label>Current Password</label><input type="password" id="set_cur_pass" placeholder="Current password"></div>
-<div class="form-group"><label>New Password</label><input type="password" id="set_new_pass" placeholder="New password"></div>
-<div class="form-group"><label>Confirm Password</label><input type="password" id="set_con_pass" placeholder="Confirm password"></div>
-</div>
-<div class="form-actions">
-<button class="btn btn-primary" onclick="changeCredentials()">🔐 Update</button>
+<div class="fgr" style="margin-top:12px"><label>QR Code Image URL</label><input type="text" id="SQR" placeholder="https://...image url..."></div>
+<div id="QRP" style="margin-top:10px;display:none"><img id="QRI" src="" style="width:140px;height:140px;border-radius:10px;border:2px solid var(--accent)"></div>
+<div class="fa">
+<button class="btn btn-p" onclick="sUPI()">💾 Save UPI</button>
+<button class="btn btn-b" onclick="pQR()">👁️ Preview QR</button>
 </div>
 </div>
-<div class="section-card">
-<div class="section-title">🤖 Bot Limits</div>
-<div class="form-grid">
-<div class="form-group"><label>Min Deposit</label><input type="number" id="set_min_dep" value="100"></div>
-<div class="form-group"><label>Max Deposit</label><input type="number" id="set_max_dep" value="50000"></div>
-<div class="form-group"><label>Min Withdrawal</label><input type="number" id="set_min_wd" value="200"></div>
-<div class="form-group"><label>Max Withdrawal</label><input type="number" id="set_max_wd" value="25000"></div>
-<div class="form-group"><label>Min Bet</label><input type="number" id="set_min_bet" value="10"></div>
-<div class="form-group"><label>Admin Phone</label><input type="text" id="set_admin_phone" placeholder="91XXXXXXXXXX"></div>
+<div class="scard">
+<div class="stitle">🔐 Change Credentials</div>
+<div class="fg">
+<div class="fgr"><label>New Username</label><input type="text" id="SCU" placeholder="New username"></div>
+<div class="fgr"><label>Current Password</label><input type="password" id="SCP" placeholder="Current password"></div>
+<div class="fgr"><label>New Password</label><input type="password" id="SNP" placeholder="New password"></div>
+<div class="fgr"><label>Confirm Password</label><input type="password" id="SCF" placeholder="Confirm password"></div>
 </div>
+<div class="fa"><button class="btn btn-p" onclick="cCreds()">🔐 Update Credentials</button></div>
 </div>
+<div class="scard">
+<div class="stitle">🤖 Bot Limits</div>
+<div class="fg">
+<div class="fgr"><label>Min Deposit (Rs.)</label><input type="number" id="SMD" value="100"></div>
+<div class="fgr"><label>Max Deposit (Rs.)</label><input type="number" id="SXD" value="50000"></div>
+<div class="fgr"><label>Min Withdrawal (Rs.)</label><input type="number" id="SMW" value="200"></div>
+<div class="fgr"><label>Max Withdrawal (Rs.)</label><input type="number" id="SXW" value="25000"></div>
+<div class="fgr"><label>Min Bet (Rs.)</label><input type="number" id="SMB" value="10"></div>
+<div class="fgr"><label>Admin Phone</label><input type="text" id="SAP" placeholder="91XXXXXXXXXX"></div>
 </div>
-</div>
-<div class="modal-overlay" id="marketModal">
-<div class="modal">
-<span class="modal-close" onclick="closeModal('marketModal')">✕</span>
-<div class="modal-title" id="marketModalTitle">➕ Add Market</div>
-<input type="hidden" id="editMarketId">
-<div class="form-group" style="margin-bottom:14px"><label>Market Name</label><input type="text" id="mkt_name" placeholder="Morning Market"></div>
-<div class="form-grid">
-<div class="form-group"><label>Open Time</label><input type="time" id="mkt_open"></div>
-<div class="form-group"><label>Close Time</label><input type="time" id="mkt_close"></div>
-<div class="form-group"><label>Result Time</label><input type="time" id="mkt_result"></div>
-<div class="form-group"><label>Status</label><select id="mkt_status"><option value="open">Open</option><option value="closed">Closed</option></select></div>
-</div>
-<div class="form-actions">
-<button class="btn btn-primary" onclick="saveMarket()">💾 Save</button>
-<button class="btn btn-ghost" onclick="closeModal('marketModal')">Cancel</button>
+<div class="fa"><button class="btn btn-b" onclick="T('Railway Variables mein update karein','info')">ℹ️ Update Guide</button></div>
 </div>
 </div>
 </div>
-<div class="modal-overlay" id="userModal">
-<div class="modal">
-<span class="modal-close" onclick="closeModal('userModal')">✕</span>
-<div class="modal-title">👤 User Details</div>
-<div id="userDetail"></div>
-<div class="form-group" style="margin-top:16px"><label>Wallet Adjust</label><input type="number" id="walletAdj" placeholder="500 or -200"></div>
-<div class="form-group" style="margin-top:12px"><label>Reason</label><input type="text" id="walletReason" placeholder="Reason"></div>
-<div class="form-actions">
-<button class="btn btn-primary" onclick="adjustWallet()">💰 Adjust</button>
-<button class="btn btn-ghost" onclick="closeModal('userModal')">Close</button>
+
+<div class="mo" id="MM">
+<div class="mdl">
+<span class="mclose" onclick="cM('MM')">✕</span>
+<div class="mtitle" id="MMT">➕ Add Market</div>
+<input type="hidden" id="EMI">
+<div class="fgr" style="margin-bottom:12px"><label>Market Name</label><input type="text" id="MN" placeholder="Morning Market"></div>
+<div class="fg">
+<div class="fgr"><label>Open Time</label><input type="time" id="MO"></div>
+<div class="fgr"><label>Close Time</label><input type="time" id="MC"></div>
+<div class="fgr"><label>Result Time</label><input type="time" id="MR"></div>
+<div class="fgr"><label>Status</label><select id="MS"><option value="open">Open</option><option value="closed">Closed</option></select></div>
+</div>
+<div class="fa">
+<button class="btn btn-p" onclick="sMkt()">💾 Save Market</button>
+<button class="btn btn-gh" onclick="cM('MM')">Cancel</button>
+</div>
+</div>
+</div>
+
+<div class="mo" id="UM">
+<div class="mdl">
+<span class="mclose" onclick="cM('UM')">✕</span>
+<div class="mtitle">👤 User Details</div>
+<div id="UD"></div>
+<div class="fgr" style="margin-top:14px"><label>Wallet Adjust (+ add / - deduct)</label><input type="number" id="WA" placeholder="500 or -200"></div>
+<div class="fgr" style="margin-top:10px"><label>Reason</label><input type="text" id="WR" placeholder="Reason for adjustment"></div>
+<div class="fa">
+<button class="btn btn-p" onclick="aWallet()">💰 Adjust Wallet</button>
+<button class="btn btn-gh" onclick="cM('UM')">Close</button>
 </div>
 </div>
 </div>
 <script>
-const API='';
-let TOKEN=localStorage.getItem('admin_token');
-let currentUserId=null;
-let allUsers=[];
+let TK=localStorage.getItem('at');
+let CUI=null;
+let AU=[];
+let PBD='';
 let isDark=localStorage.getItem('theme')!=='light';
-function toggleTheme(){isDark=!isDark;document.documentElement.setAttribute('data-theme',isDark?'dark':'light');document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';localStorage.setItem('theme',isDark?'dark':'light');}
-(function(){const t=localStorage.getItem('theme')||'dark';isDark=t==='dark';document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';})();
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mobileOverlay').classList.toggle('open');}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mobileOverlay').classList.remove('open');}
-function toast(msg,type='success'){const el=document.createElement('div');el.className=`toast toast-${type}`;el.innerHTML=(type==='success'?'✅':type==='error'?'❌':'ℹ️')+' '+msg;document.getElementById('toastContainer').appendChild(el);setTimeout(()=>el.remove(),3500);}
-async function doLogin(){const u=document.getElementById('loginUser').value;const p=document.getElementById('loginPass').value;try{const res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const data=await res.json();if(data.token){TOKEN=data.token;localStorage.setItem('admin_token',TOKEN);document.getElementById('loginPage').style.display='none';toast('Login successful! Welcome 👋');loadDashboard();startAutoRefresh();}else{document.getElementById('loginErr').textContent=data.error||'Wrong credentials';}}catch(e){document.getElementById('loginErr').textContent='Server error';}}
-document.addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
-function doLogout(){if(!confirm('Logout?'))return;localStorage.removeItem('admin_token');location.reload();}
-async function api(path,method='GET',body=null){const opts={method,headers:{Authorization:`Bearer ${TOKEN}`,'Content-Type':'application/json'}};if(body)opts.body=JSON.stringify(body);const res=await fetch(`/api/admin${path}`,opts);return res.json();}
-const pageTitles={dashboard:'📊 Dashboard',deposits:'💰 Deposits',withdrawals:'🏧 Withdrawals',markets:'🕐 Markets',results:'🎲 Results',pdfs:'📄 Bet PDFs',users:'👥 Users',rates:'⚙️ Game Rates',settings:'🔧 Settings'};
-function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(a=>a.classList.remove('active'));document.getElementById(name).classList.add('active');if(el)el.classList.add('active');document.getElementById('pageTitle').textContent=pageTitles[name]||name;closeSidebar();if(name==='dashboard')loadDashboard();if(name==='deposits')loadDeposits();if(name==='withdrawals')loadWithdrawals();if(name==='markets')loadMarkets();if(name==='results')loadResults();if(name==='pdfs')loadPDFMarkets();if(name==='users')loadUsers();if(name==='rates')loadRates();}
-function refreshPage(){const a=document.querySelector('.page.active')?.id;if(a)showPage(a,null);toast('Refreshed!','info');}
-function fmtTime(dt){if(!dt)return'—';return new Date(dt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
-function digitSum(p){if(!p||p.length<3)return'—';return p.split('').reduce((a,b)=>a+parseInt(b),0)%10;}
-async function loadDashboard(){try{const s=await api('/stats');document.getElementById('s_users').textContent=s.totalUsers||0;document.getElementById('s_dep').textContent='₹'+(s.todayDeposit||0);document.getElementById('s_bets').textContent=s.todayBets||0;document.getElementById('s_wd').textContent=s.pendingWithdrawals||0;document.getElementById('depBadge').textContent=s.pendingDeposits||0;document.getElementById('wdBadge').textContent=s.pendingWithdrawals||0;const deps=await api('/deposits/pending');document.getElementById('dashDeps').innerHTML=deps.length?deps.map(d=>`<tr><td><b>${d.name}</b><br><small style="color:var(--text2)">${d.whatsapp_number}</small></td><td style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:18px">₹${d.amount}</td><td><span class="badge badge-${d.source}">${d.source}</span></td><td style="color:var(--text2);font-size:12px">${fmtTime(d.created_at)}</td><td><button class="btn btn-green" onclick="approveDeposit(${d.id})">✅ Approve</button><button class="btn btn-red" onclick="rejectDeposit(${d.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Koi pending deposit nahi ✓</td></tr>';const wds=await api('/withdrawals/pending');document.getElementById('dashWds').innerHTML=wds.length?wds.map(w=>`<tr><td><b>${w.name}</b><br><small style="color:var(--text2)">${w.whatsapp_number}</small></td><td style="color:var(--red);font-weight:700;font-family:Rajdhani,sans-serif;font-size:18px">₹${w.amount}</td><td><code style="color:var(--text2);font-size:12px">${w.upi_id}</code></td><td style="color:var(--text2);font-size:12px">${fmtTime(w.created_at)}</td><td><button class="btn btn-blue" onclick="payWithdrawal(${w.id},${w.amount},'${w.upi_id}')">💸 Pay</button><button class="btn btn-red" onclick="rejectWithdrawal(${w.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">Koi pending withdrawal nahi ✓</td></tr>';}catch(e){console.error(e);}}
-async function loadDeposits(){const deps=await api('/deposits/pending');document.getElementById('depsTable').innerHTML=deps.length?deps.map(d=>`<tr><td><b>${d.name}</b><br><small>${d.whatsapp_number}</small></td><td style="color:var(--green);font-weight:700">₹${d.amount}</td><td><code style="font-size:12px">${d.utr_number||'—'}</code></td><td><span class="badge badge-${d.source}">${d.source}</span></td><td><span class="badge badge-${d.status}">${d.status}</span></td><td style="font-size:12px;color:var(--text2)">${fmtTime(d.created_at)}</td><td><button class="btn btn-green" onclick="approveDeposit(${d.id})">✅</button><button class="btn btn-red" onclick="rejectDeposit(${d.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Koi pending deposit nahi ✓</td></tr>';}
-async function approveDeposit(id){const utr=prompt('UTR number (khali bhi chhod sakte ho):');await api(`/deposits/${id}/approve`,'POST',{utr});toast('Deposit approved!');loadDashboard();loadDeposits();}
-async function rejectDeposit(id){const reason=prompt('Reject reason:');await api(`/deposits/${id}/reject`,'POST',{reason});toast('Deposit rejected','error');loadDashboard();loadDeposits();}
-async function loadWithdrawals(){const wds=await api('/withdrawals/pending');document.getElementById('wdsTable').innerHTML=wds.length?wds.map(w=>`<tr><td><b>${w.name}</b><br><small>${w.whatsapp_number}</small></td><td style="color:var(--red);font-weight:700">₹${w.amount}</td><td><code style="font-size:12px">${w.upi_id}</code></td><td><code style="font-size:12px">${w.utr_number||'—'}</code></td><td><span class="badge badge-${w.status}">${w.status}</span></td><td style="font-size:12px;color:var(--text2)">${fmtTime(w.created_at)}</td><td><button class="btn btn-blue" onclick="payWithdrawal(${w.id},${w.amount},'${w.upi_id}')">💸 Pay</button><button class="btn btn-red" onclick="rejectWithdrawal(${w.id})">❌</button></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Koi pending withdrawal nahi ✓</td></tr>';}
-async function payWithdrawal(id,amount,upi){const utr=prompt(`₹${amount} bhejo: ${upi}\nUTR paste karo:`);if(!utr)return;await api(`/withdrawals/${id}/pay`,'POST',{utr});toast(`₹${amount} paid!`);loadDashboard();loadWithdrawals();}
-async function rejectWithdrawal(id){const reason=prompt('Reject reason:');await api(`/withdrawals/${id}/reject`,'POST',{reason});toast('Rejected','error');loadDashboard();loadWithdrawals();}
-async function loadMarkets(){const mkts=await api('/markets');document.getElementById('mktTable').innerHTML=mkts.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.open_time}</td><td>${m.close_time}</td><td>${m.result_time}</td><td><span class="badge badge-${m.status}">${m.status}</span></td><td><button class="btn btn-blue" onclick='editMarket(${JSON.stringify(m)})'>✏️ Edit</button><button class="btn btn-ghost" onclick="toggleMarket(${m.id},'${m.status}')">🔄</button></td></tr>`).join('');}
-function openAddMarket(){document.getElementById('editMarketId').value='';document.getElementById('marketModalTitle').textContent='➕ Add Market';['mkt_name','mkt_open','mkt_close','mkt_result'].forEach(id=>document.getElementById(id).value='');document.getElementById('marketModal').classList.add('open');}
-function editMarket(m){document.getElementById('editMarketId').value=m.id;document.getElementById('marketModalTitle').textContent='✏️ Edit Market';document.getElementById('mkt_name').value=m.name;document.getElementById('mkt_open').value=m.open_time?.slice(0,5);document.getElementById('mkt_close').value=m.close_time?.slice(0,5);document.getElementById('mkt_result').value=m.result_time?.slice(0,5);document.getElementById('mkt_status').value=m.status;document.getElementById('marketModal').classList.add('open');}
-async function saveMarket(){
-  const id=document.getElementById('editMarketId').value;
-  const data={
-    name:document.getElementById('mkt_name').value,
-    open_time:document.getElementById('mkt_open').value+':00',
-    close_time:document.getElementById('mkt_close').value+':00',
-    result_time:document.getElementById('mkt_result').value+':00',
-    status:document.getElementById('mkt_status').value
-  };
-  if(!data.name){toast('Market name daalo','error');return;}
-  if(id){
-    const res=await api(`/markets/${id}`,'PUT',data);
-    if(res.success){toast('Market updated! ✅');}
-    else{toast('Error: '+res.error,'error');}
-  }else{
-    const res=await api('/markets','POST',data);
-    if(res.success){toast('Market added! ✅');}
-    else{toast('Error: '+res.error,'error');}
-  }
-  closeModal('marketModal');
-  loadMarkets();
+
+// THEME
+function tTheme(){isDark=!isDark;document.documentElement.setAttribute('data-theme',isDark?'dark':'light');document.getElementById('TB').textContent=isDark?'🌙':'☀️';localStorage.setItem('theme',isDark?'dark':'light');}
+(function(){const t=localStorage.getItem('theme')||'dark';isDark=t==='dark';document.documentElement.setAttribute('data-theme',t);if(document.getElementById('TB'))document.getElementById('TB').textContent=isDark?'🌙':'☀️';})();
+
+// SIDEBAR
+function tSB(){document.getElementById('SB').classList.toggle('open');document.getElementById('MOV').classList.toggle('open');}
+function cSB(){document.getElementById('SB').classList.remove('open');document.getElementById('MOV').classList.remove('open');}
+
+// TOAST
+function T(msg,type='success'){const el=document.createElement('div');el.className=`toast t${type[0]}`;el.innerHTML=(type==='success'?'✅':type==='error'?'❌':'ℹ️')+' '+msg;document.getElementById('TC').appendChild(el);setTimeout(()=>el.remove(),3500);}
+
+// LOGIN
+async function doLogin(){
+  const u=document.getElementById('LU').value;
+  const p=document.getElementById('LP').value;
+  if(!u||!p){document.getElementById('LE').textContent='Username aur password daalo';return;}
+  try{
+    const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(d.token){TK=d.token;localStorage.setItem('at',TK);document.getElementById('loginPage').style.display='none';T('Welcome back! 👋');lDB();sAR();}
+    else{document.getElementById('LE').textContent=d.error||'Wrong credentials';}
+  }catch(e){document.getElementById('LE').textContent='Server error';}
 }
-async function toggleMarket(id,status){const s=status==='open'?'closed':'open';await api(`/markets/${id}`,'PUT',{status:s});toast(`Market ${s}!`);loadMarkets();}
-async function loadResults(){const mkts=await api('/markets');const open=mkts.filter(m=>m.status!=='resulted'&&m.status!=='cancelled');document.getElementById('resMarket').innerHTML=open.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');const resulted=mkts.filter(m=>m.status==='resulted');document.getElementById('resTable').innerHTML=resulted.length?resulted.map(m=>`<tr><td><b>${m.name}</b></td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--orange)">${m.result_open_pana||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--blue)">${digitSum(m.result_open_pana)}</td><td style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:var(--accent)">${m.result_jodi||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--orange)">${m.result_close_pana||'—'}</td><td style="font-family:Rajdhani,sans-serif;font-size:18px;color:var(--blue)">${digitSum(m.result_close_pana)}</td><td style="font-size:12px;color:var(--text2)">${fmtTime(m.resulted_at)}</td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Koi result nahi</td></tr>';}
-function calcResult(){const op=document.getElementById('openPana').value;const cp=document.getElementById('closePana').value;if(op.length===3&&cp.length===3){const os=digitSum(op);const cs=digitSum(cp);document.getElementById('resPreview').value=`Open Pana: ${op} | Open Ank: ${os} | Jodi: ${os}${cs} | Close Pana: ${cp} | Close Ank: ${cs}`;}}
-function clearResult(){['openPana','closePana','resPreview'].forEach(id=>document.getElementById(id).value='');}
-async function declareResult(){const mId=document.getElementById('resMarket').value;const op=document.getElementById('openPana').value;const cp=document.getElementById('closePana').value;if(!mId){toast('Market select karo','error');return;}if(op.length!==3){toast('Open Pana 3 digit','error');return;}if(cp.length!==3){toast('Close Pana 3 digit','error');return;}if(!confirm(`Result declare?\nOpen: ${op} | Close: ${cp}`))return;const res=await api(`/markets/${mId}/result`,'POST',{openPana:op,closePana:cp});if(res.success){toast(`🎉 Jodi: ${res.jodi} | Winners: ${res.summary?.totalWinners||0} | Payout: ₹${res.summary?.totalPayout||0}`);clearResult();loadResults();}else{toast('Error: '+res.error,'error');}}
-async function loadPDFMarkets(){const mkts=await api('/markets');const sel=document.getElementById('pdfMarketSel');sel.innerHTML='<option value="">-- Select Market --</option>'+mkts.map(m=>`<option value="${m.id}">${m.name} (${m.status})</option>`).join('');}
-async function loadPDFData(){
-  const mId=document.getElementById('pdfMarketSel').value;
-  if(!mId)return;
-  document.getElementById('pdfContent').style.display='block';
+document.addEventListener('keypress',e=>{if(e.key==='Enter'&&document.getElementById('loginPage').style.display!=='none')doLogin();});
+function doLogout(){if(!confirm('Logout karna chahte ho?'))return;localStorage.removeItem('at');location.reload();}
+
+// API
+async function A(path,method='GET',body=null){
+  const o={method,headers:{Authorization:`Bearer ${TK}`,'Content-Type':'application/json'}};
+  if(body)o.body=JSON.stringify(body);
+  try{const r=await fetch(`/api/admin${path}`,o);return r.json();}
+  catch(e){return{error:e.message};}
+}
+
+// PAGES
+const PT2={dashboard:'📊 Dashboard',deposits:'💰 Deposits',withdrawals:'🏧 Withdrawals',markets:'🕐 Markets',results:'🎲 Results',pdfs:'📄 Bet PDFs',users:'👥 Users',rates:'⚙️ Game Rates',settings:'🔧 Settings'};
+function SP(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('PT').textContent=PT2[name]||name;
+  cSB();
+  const fn={dashboard:lDB,deposits:lDeps,withdrawals:lWds,markets:lMkts,results:lRes,pdfs:lPDFMkts,users:lUsers,rates:lRates};
+  if(fn[name])fn[name]();
+}
+function rPage(){const a=document.querySelector('.page.active')?.id;if(a)SP(a,null);T('Refreshed!','info');}
+function fT(dt){if(!dt)return'—';return new Date(dt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
+function dSum(p){if(!p||p.length<3)return'—';return String(p.split('').reduce((a,b)=>a+parseInt(b),0)%10);}
+
+// DASHBOARD
+async function lDB(){
+  try{
+    const s=await A('/stats');
+    document.getElementById('SU').textContent=s.totalUsers||0;
+    document.getElementById('SD').textContent='₹'+(s.todayDeposit||0);
+    document.getElementById('SB2').textContent=s.todayBets||0;
+    document.getElementById('SW').textContent=s.pendingWithdrawals||0;
+    document.getElementById('DB').textContent=s.pendingDeposits||0;
+    document.getElementById('WB').textContent=s.pendingWithdrawals||0;
+
+    const deps=await A('/deposits/pending');
+    document.getElementById('DD').innerHTML=deps.length?deps.map(d=>`
+      <tr>
+        <td><b>${d.name}</b><br><small style="color:var(--text2)">${d.whatsapp_number}</small></td>
+        <td style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:17px">₹${d.amount}</td>
+        <td><span class="badge bsm">${d.source||'manual'}</span></td>
+        <td style="color:var(--text2);font-size:11px">${fT(d.created_at)}</td>
+        <td>
+          <button class="btn btn-g" onclick="apDep(${d.id})">✅ Approve</button>
+          <button class="btn btn-r" onclick="rjDep(${d.id})">❌</button>
+        </td>
+      </tr>`).join('')
+    :'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text2)">Koi pending deposit nahi ✓</td></tr>';
+
+    const wds=await A('/withdrawals/pending');
+    document.getElementById('DW').innerHTML=wds.length?wds.map(w=>`
+      <tr>
+        <td><b>${w.name}</b><br><small style="color:var(--text2)">${w.whatsapp_number}</small></td>
+        <td style="color:var(--red);font-weight:700;font-family:Rajdhani,sans-serif;font-size:17px">₹${w.amount}</td>
+        <td><code style="font-size:11px;color:var(--text2)">${w.upi_id}</code></td>
+        <td style="color:var(--text2);font-size:11px">${fT(w.created_at)}</td>
+        <td>
+          <button class="btn btn-b" onclick="pyWD(${w.id},${w.amount},'${w.upi_id}')">💸 Pay</button>
+          <button class="btn btn-r" onclick="rjWD(${w.id})">❌</button>
+        </td>
+      </tr>`).join('')
+    :'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text2)">Koi pending withdrawal nahi ✓</td></tr>';
+  }catch(e){console.error(e);}
+}
+
+// DEPOSITS
+async function lDeps(){
+  const d=await A('/deposits/pending');
+  document.getElementById('DT').innerHTML=d.length?d.map(x=>`
+    <tr>
+      <td><b>${x.name}</b><br><small>${x.whatsapp_number}</small></td>
+      <td style="color:var(--green);font-weight:700">₹${x.amount}</td>
+      <td><code style="font-size:11px">${x.utr_number||'—'}</code></td>
+      <td><span class="badge bsm">${x.source||'manual'}</span></td>
+      <td><span class="badge bp">${x.status}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${fT(x.created_at)}</td>
+      <td>
+        <button class="btn btn-g" onclick="apDep(${x.id})">✅</button>
+        <button class="btn btn-r" onclick="rjDep(${x.id})">❌</button>
+      </td>
+    </tr>`).join('')
+  :'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text2)">Koi pending deposit nahi ✓</td></tr>';
+}
+async function apDep(id){const utr=prompt('UTR number enter karo (ya khali chhodo):');const r=await A(`/deposits/${id}/approve`,'POST',{utr:utr||'MANUAL'});if(r.success){T('✅ Deposit approved! User notify ho gaya');}else{T(r.error||'Error','error');}lDB();lDeps();}
+async function rjDep(id){const reason=prompt('Reject reason:');if(reason===null)return;const r=await A(`/deposits/${id}/reject`,'POST',{reason});if(r.success){T('Deposit rejected','error');}lDB();lDeps();}
+
+// WITHDRAWALS
+async function lWds(){
+  const w=await A('/withdrawals/pending');
+  document.getElementById('WT').innerHTML=w.length?w.map(x=>`
+    <tr>
+      <td><b>${x.name}</b><br><small>${x.whatsapp_number}</small></td>
+      <td style="color:var(--red);font-weight:700">₹${x.amount}</td>
+      <td><code style="font-size:11px">${x.upi_id}</code></td>
+      <td><code style="font-size:11px">${x.utr_number||'—'}</code></td>
+      <td><span class="badge bp">${x.status}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${fT(x.created_at)}</td>
+      <td>
+        <button class="btn btn-b" onclick="pyWD(${x.id},${x.amount},'${x.upi_id}')">💸 Pay</button>
+        <button class="btn btn-r" onclick="rjWD(${x.id})">❌</button>
+      </td>
+    </tr>`).join('')
+  :'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text2)">Koi pending withdrawal nahi ✓</td></tr>';
+}
+async function pyWD(id,amt,upi){const utr=prompt(`₹${amt} bhejo is UPI par:\n${upi}\n\nPhir UTR number yahan paste karo:`);if(!utr)return;const r=await A(`/withdrawals/${id}/pay`,'POST',{utr});if(r.success){T(`✅ ₹${amt} paid! User notify ho gaya`);}else{T(r.error||'Error','error');}lDB();lWds();}
+async function rjWD(id){const reason=prompt('Reject reason:');if(reason===null)return;const r=await A(`/withdrawals/${id}/reject`,'POST',{reason});if(r.success){T('Rejected. Amount wapas credit ho gaya','error');}lDB();lWds();}
+
+// MARKETS
+async function lMkts(){
+  const m=await A('/markets');
+  document.getElementById('MT').innerHTML=m.length?m.map(x=>`
+    <tr>
+      <td><b>${x.name}</b></td>
+      <td>${x.open_time?.slice(0,5)||'—'}</td>
+      <td>${x.close_time?.slice(0,5)||'—'}</td>
+      <td>${x.result_time?.slice(0,5)||'—'}</td>
+      <td><span class="badge b${x.status?.slice(0,2)}">${x.status}</span></td>
+      <td>
+        <button class="btn btn-b" onclick='eMkt(${JSON.stringify(x)})'>✏️ Edit</button>
+        <button class="btn btn-gh" onclick="tMkt(${x.id},'${x.status}')">🔄 Toggle</button>
+      </td>
+    </tr>`).join('')
+  :'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text2)">Koi market nahi</td></tr>';
+}
+function oAM(){
+  document.getElementById('EMI').value='';
+  document.getElementById('MMT').textContent='➕ Add Market';
+  ['MN','MO','MC','MR'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('MS').value='open';
+  document.getElementById('MM').classList.add('open');
+}
+function eMkt(m){
+  document.getElementById('EMI').value=m.id;
+  document.getElementById('MMT').textContent='✏️ Edit Market';
+  document.getElementById('MN').value=m.name||'';
+  document.getElementById('MO').value=m.open_time?.slice(0,5)||'';
+  document.getElementById('MC').value=m.close_time?.slice(0,5)||'';
+  document.getElementById('MR').value=m.result_time?.slice(0,5)||'';
+  document.getElementById('MS').value=m.status||'open';
+  document.getElementById('MM').classList.add('open');
+}
+async function sMkt(){
+  const id=document.getElementById('EMI').value;
+  const name=document.getElementById('MN').value.trim();
+  const ot=document.getElementById('MO').value;
+  const ct=document.getElementById('MC').value;
+  const rt=document.getElementById('MR').value;
+  const st=document.getElementById('MS').value;
+  if(!name){T('Market name daalo','error');return;}
+  if(!ot||!ct||!rt){T('Sab times daalo','error');return;}
+  const data={name,open_time:ot+':00',close_time:ct+':00',result_time:rt+':00',status:st};
+  let r;
+  if(id){r=await A(`/markets/${id}`,'PUT',data);}
+  else{r=await A('/markets','POST',data);}
+  if(r.success){T(id?'Market updated! ✅':'Market added! ✅');cM('MM');lMkts();}
+  else{T('Error: '+(r.error||'Unknown'),'error');}
+}
+async function tMkt(id,status){
+  const ns=status==='open'?'closed':'open';
+  const r=await A(`/markets/${id}`,'PUT',{status:ns});
+  if(r.success){T(`Market ${ns}!`);}
+  lMkts();
+}
+
+// RESULTS
+async function lRes(){
+  const mkts=await A('/markets');
+  const open=mkts.filter(m=>m.status!=='resulted'&&m.status!=='cancelled');
+  document.getElementById('RM').innerHTML=open.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  const done=mkts.filter(m=>m.status==='resulted');
+  document.getElementById('RT').innerHTML=done.length?done.map(m=>`
+    <tr>
+      <td><b>${m.name}</b></td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:17px;color:var(--orange)">${m.result_open_pana||'—'}</td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:17px;color:var(--blue)">${dSum(m.result_open_pana)}</td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:20px;font-weight:700;color:var(--accent)">${m.result_jodi||'—'}</td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:17px;color:var(--orange)">${m.result_close_pana||'—'}</td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:17px;color:var(--blue)">${dSum(m.result_close_pana)}</td>
+      <td style="font-size:11px;color:var(--text2)">${fT(m.resulted_at)}</td>
+    </tr>`).join('')
+  :'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text2)">Koi result nahi</td></tr>';
+}
+function cRes(){
+  const op=document.getElementById('OP').value;
+  const cp=document.getElementById('CP').value;
+  if(op.length===3&&cp.length===3){
+    const oa=dSum(op);
+    const ca=dSum(cp);
+    document.getElementById('RP').value=`Open Pana: ${op} | Ank: ${oa} | Jodi: ${oa}${ca} | Close Pana: ${cp} | Ank: ${ca}`;
+  }
+}
+function clRes(){['OP','CP','RP'].forEach(id=>document.getElementById(id).value='');}
+async function dRes(){
+  const mId=document.getElementById('RM').value;
+  const op=document.getElementById('OP').value;
+  const cp=document.getElementById('CP').value;
+  if(!mId){T('Market select karo','error');return;}
+  if(op.length!==3){T('Open Pana 3 digit hona chahiye','error');return;}
+  if(cp.length!==3){T('Close Pana 3 digit hona chahiye','error');return;}
+  const oa=dSum(op);const ca=dSum(cp);
+  if(!confirm(`Result declare karna chahte ho?\n\nOpen Pana: ${op} (Ank: ${oa})\nJodi: ${oa}${ca}\nClose Pana: ${cp} (Ank: ${ca})`))return;
+  const r=await A(`/markets/${mId}/result`,'POST',{openPana:op,closePana:cp});
+  if(r.success){
+    T(`🎉 Result declared!\nOpen Ank: ${r.openAnk} | Jodi: ${r.jodi} | Close Ank: ${r.closeAnk}\nWinners: ${r.summary?.totalWinners||0} | Payout: ₹${r.summary?.totalPayout||0}`);
+    clRes();lRes();
+  }else{T('Error: '+(r.error||'Unknown'),'error');}
+}
+
+// PDFs
+async function lPDFMkts(){
+  const mkts=await A('/markets');
+  const sel=document.getElementById('PS');
+  sel.innerHTML='<option value="">-- Select Market --</option>'+mkts.map(m=>`<option value="${m.id}">${m.name} (${m.status})</option>`).join('');
+}
+async function lPDF(){
+  const mId=document.getElementById('PS').value;
+  if(!mId){document.getElementById('PC').style.display='none';return;}
+  document.getElementById('PC').style.display='block';
   const types=['open_single','open_pana','jodi','close_single','close_pana'];
   const labels={'open_single':'Open Single','open_pana':'Open Pana','jodi':'Jodi','close_single':'Close Single','close_pana':'Close Pana'};
   const icons={'open_single':'1️⃣','open_pana':'🔵','jodi':'🟡','close_single':'🔴','close_pana':'🟠'};
-  document.getElementById('pdfCards').innerHTML=types.map(t=>`
-    <div class="pdf-card" onclick="showBetType('${t}',${mId})">
-      <div class="pdf-icon">${icons[t]}</div>
-      <div class="pdf-label">${labels[t]}</div>
-      <div style="font-size:10px;color:var(--accent);margin-top:6px">Tap to view</div>
+  document.getElementById('PG').innerHTML=types.map(t=>`
+    <div class="pcard" onclick="sBT('${t}',${mId},'${labels[t]}')">
+      <div class="picon">${icons[t]}</div>
+      <div class="plabel">${labels[t]}</div>
+      <div style="font-size:10px;color:var(--accent);margin-top:5px">Tap to view ↓</div>
     </div>`).join('');
+  document.getElementById('PDB').style.display='none';
+}
+async function sBT(type,mId,label){
+  T('Data load ho raha hai...','info');
+  document.getElementById('PDB').style.display='block';
+  document.getElementById('PD').textContent='Loading...';
+  const bets=await A(`/bets/by-market/${mId}`);
+  if(bets.error){T('Data load nahi hua: '+bets.error,'error');return;}
+  const filtered=bets.filter(b=>b.bet_type===type);
+  let text=`╔══════════════════════════╗\n`;
+  text+=`║  ${label.toUpperCase().padEnd(24)}║\n`;
+  text+=`╚══════════════════════════╝\n\n`;
+  text+=`NUMBER     │ AMOUNT\n`;
+  text+=`───────────┼────────────────\n`;
+  if(!filtered.length){text+=`  Koi bet nahi is type mein\n`;}
+  else{filtered.forEach(b=>{text+=` ${String(b.number).padEnd(10)}│ Rs. ${parseFloat(b.total_amount).toLocaleString('en-IN')}\n`;});}
+  const total=filtered.reduce((s,b)=>s+parseFloat(b.total_amount||0),0);
+  text+=`───────────┼────────────────\n`;
+  text+=` TOTAL     │ Rs. ${total.toLocaleString('en-IN')}\n`;
+  text+=`\nTotal Bets: ${filtered.reduce((s,b)=>s+parseInt(b.count||0),0)}`;
+  PBD=text;
+  document.getElementById('PD').textContent=text;
+  T('Data ready! Copy ya download karo','success');
+}
+function cpyData(){if(!PBD){T('Pehle bet type select karo','error');return;}navigator.clipboard.writeText(PBD);T('Copied! 📋');}
+function tDB2(){const b=document.getElementById('PDB');b.style.display=b.style.display==='none'?'block':'none';}
+function dlFile(){
+  if(!PBD){T('Pehle data load karo','error');return;}
+  const blob=new Blob([PBD],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='bet_data.txt';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  T('File download ho rahi hai! ⬇️');
 }
 
-async function showBetType(type,mId){
-  toast('Data load ho raha hai...','info');
-  document.getElementById('textDataBox').style.display='block';
-  document.getElementById('textData').textContent='Loading...';
-  try{
-    const bets=await api(`/bets/by-market/${mId}`);
-    const filtered=bets.filter(b=>b.bet_type===type);
-    const labels={'open_single':'OPEN SINGLE','open_pana':'OPEN PANA','jodi':'JODI','close_single':'CLOSE SINGLE','close_pana':'CLOSE PANA'};
-    let text=`╔════════════════════════╗\n`;
-    text+=`║  ${(labels[type]||type).padEnd(22)}║\n`;
-    text+=`╚════════════════════════╝\n\n`;
-    text+=`NUMBER    │ AMOUNT\n`;
-    text+=`──────────┼───────────────\n`;
-    if(!filtered.length){text+='  Koi bet nahi\n';}
-    else{filtered.forEach(b=>{text+=` ${String(b.number).padEnd(9)}│ Rs. ${parseFloat(b.total_amount).toLocaleString('en-IN')}\n`;});}
-    const total=filtered.reduce((s,b)=>s+parseFloat(b.total_amount),0);
-    text+=`──────────┼───────────────\n`;
-    text+=` TOTAL    │ Rs. ${total.toLocaleString('en-IN')}\n`;
-    document.getElementById('textData').textContent=text;
-
-    // Download PDF button
-    const existing=document.getElementById('downloadPDFBtn');
-    if(existing)existing.remove();
-    const btn=document.createElement('button');
-    btn.id='downloadPDFBtn';
-    btn.className='btn btn-primary';
-    btn.style.marginTop='12px';
-    btn.innerHTML='⬇️ Download as Text File';
-    btn.onclick=()=>{
-      const blob=new Blob([text],{type:'text/plain'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=`${labels[type]||type}_bets.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast('File download ho rahi hai!');
-    };
-    document.getElementById('textDataBox').appendChild(btn);
-  }catch(e){
-    document.getElementById('textData').textContent='Error loading data';
-    toast('Data load nahi hua','error');
-  }
+// USERS
+async function lUsers(){const u=await A('/users');AU=u;rUsers(u);}
+function rUsers(users){
+  document.getElementById('UT').innerHTML=users.length?users.map(u=>`
+    <tr>
+      <td><b>${u.name}</b></td>
+      <td style="font-size:11px">${u.whatsapp_number}</td>
+      <td style="font-size:11px;color:var(--text2)">${u.upi_id||'—'}</td>
+      <td style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:16px">₹${u.wallet_balance}</td>
+      <td><span class="badge ${u.status==='active'?'ba':'br'}">${u.status}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${fT(u.registered_at)}</td>
+      <td>
+        <button class="btn btn-b" onclick='oUD(${JSON.stringify(u)})'>👤</button>
+        <button class="btn ${u.status==='active'?'btn-r':'btn-g'}" onclick="blkU(${u.id},'${u.status==='active'?'block':'unblock'}')">
+          ${u.status==='active'?'🚫':'✅'}
+        </button>
+      </td>
+    </tr>`).join('')
+  :'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text2)">Koi user nahi</td></tr>';
 }
-function copyTextData(){navigator.clipboard.writeText(document.getElementById('textData').textContent);toast('Copied! 📋');}
-function toggleDataBox(){const b=document.getElementById('textDataBox');b.style.display=b.style.display==='none'?'block':'none';}
-async function loadUsers(){const users=await api('/users');allUsers=users;renderUsers(users);}
-function renderUsers(users){document.getElementById('usersTable').innerHTML=users.map(u=>`<tr><td><b>${u.name}</b></td><td style="font-size:12px">${u.whatsapp_number}</td><td style="font-size:12px;color:var(--text2)">${u.upi_id||'—'}</td><td style="color:var(--green);font-weight:700;font-family:Rajdhani,sans-serif;font-size:16px">₹${u.wallet_balance}</td><td><span class="badge badge-${u.status}">${u.status}</span></td><td style="font-size:12px;color:var(--text2)">${fmtTime(u.registered_at)}</td><td><button class="btn btn-blue" onclick='openUserDetail(${JSON.stringify(u)})'>👤</button><button class="btn ${u.status==='active'?'btn-red':'btn-green'}" onclick="blockUser(${u.id},'${u.status==='active'?'block':'unblock'}')">${u.status==='active'?'🚫':'✅'}</button></td></tr>`).join('');}
-function filterUsers(){const q=document.getElementById('userSearch').value.toLowerCase();renderUsers(allUsers.filter(u=>u.name?.toLowerCase().includes(q)||u.whatsapp_number?.includes(q)));}
-function openUserDetail(u){currentUserId=u.id;document.getElementById('userDetail').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div><div style="font-size:11px;color:var(--text2)">NAME</div><b>${u.name}</b></div><div><div style="font-size:11px;color:var(--text2)">PHONE</div><b>${u.whatsapp_number}</b></div><div><div style="font-size:11px;color:var(--text2)">UPI</div><b>${u.upi_id||'—'}</b></div><div><div style="font-size:11px;color:var(--text2)">BALANCE</div><b style="color:var(--green);font-family:Rajdhani,sans-serif;font-size:22px">₹${u.wallet_balance}</b></div></div>`;document.getElementById('walletAdj').value='';document.getElementById('walletReason').value='';document.getElementById('userModal').classList.add('open');}
-async function adjustWallet(){const amount=parseFloat(document.getElementById('walletAdj').value);const reason=document.getElementById('walletReason').value;if(isNaN(amount)||!reason){toast('Amount aur reason dono bharo','error');return;}await api(`/users/${currentUserId}/adjust`,'POST',{amount,reason});toast(`Wallet adjusted!`);closeModal('userModal');loadUsers();}
-async function blockUser(id,action){if(!confirm(`${action}?`))return;await api(`/users/${id}/block`,'POST',{action});toast(`User ${action}ed!`,action==='block'?'error':'success');loadUsers();}
-function loadRates(){const r=JSON.parse(localStorage.getItem('game_rates')||'{}');['open_single','open_pana','jodi','close_single','close_pana','triple_pana'].forEach(k=>{if(r[k])document.getElementById('rate_'+k).value=r[k];});}
-function saveRates(){const r={};['open_single','open_pana','jodi','close_single','close_pana','triple_pana'].forEach(k=>{r[k]=document.getElementById('rate_'+k).value;});localStorage.setItem('game_rates',JSON.stringify(r));toast('Game rates saved!');}
-function previewQR(){const url=document.getElementById('set_qr_url').value;if(!url){toast('QR URL daalo','error');return;}document.getElementById('qrImg').src=url;document.getElementById('qrPreview').style.display='block';}
-function saveUPISettings(){const upi=document.getElementById('set_upi').value;if(!upi){toast('UPI ID daalo','error');return;}localStorage.setItem('upi_settings',JSON.stringify({upi,name:document.getElementById('set_upi_name').value}));toast('UPI saved!');}
-async function changeCredentials(){const username=document.getElementById('set_username').value;const curPass=document.getElementById('set_cur_pass').value;const newPass=document.getElementById('set_new_pass').value;const conPass=document.getElementById('set_con_pass').value;if(newPass&&newPass!==conPass){toast('Passwords match nahi karte','error');return;}if(!curPass){toast('Current password daalo','error');return;}const res=await api('/change-credentials','POST',{username,currentPassword:curPass,newPassword:newPass});if(res.success){toast('Updated! Dobara login karo');setTimeout(doLogout,2000);}else{toast(res.error||'Error','error');}}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});});
-function startAutoRefresh(){setInterval(()=>{if(document.querySelector('.page.active')?.id==='dashboard')loadDashboard();},30000);}
-if(TOKEN){document.getElementById('loginPage').style.display='none';loadDashboard();startAutoRefresh();}
+function fUsers(){const q=document.getElementById('US').value.toLowerCase();rUsers(AU.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.whatsapp_number||'').includes(q)));}
+function oUD(u){
+  CUI=u.id;
+  document.getElementById('UD').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;background:var(--bg3);border-radius:8px;padding:14px">
+      <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">NAME</div><b>${u.name}</b></div>
+      <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">PHONE</div><b>${u.whatsapp_number}</b></div>
+      <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">UPI</div><b>${u.upi_id||'—'}</b></div>
+      <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">BALANCE</div><b style="color:var(--green);font-family:Rajdhani,sans-serif;font-size:22px">₹${u.wallet_balance}</b></div>
+    </div>`;
+  document.getElementById('WA').value='';
+  document.getElementById('WR').value='';
+  document.getElementById('UM').classList.add('open');
+}
+async function aWallet(){
+  const amt=parseFloat(document.getElementById('WA').value);
+  const reason=document.getElementById('WR').value.trim();
+  if(isNaN(amt)){T('Valid amount daalo','error');return;}
+  if(!reason){T('Reason daalo','error');return;}
+  const r=await A(`/users/${CUI}/adjust`,'POST',{amount:amt,reason});
+  if(r.success){T(`Wallet ₹${amt} adjusted!`);cM('UM');lUsers();}
+  else{T(r.error||'Error','error');}
+}
+async function blkU(id,action){
+  if(!confirm(`User ko ${action} karna chahte ho?`))return;
+  const r=await A(`/users/${id}/block`,'POST',{action});
+  if(r.success){T(`User ${action}ed!`,action==='block'?'error':'success');}
+  lUsers();
+}
+
+// GAME RATES
+function lRates(){const r=JSON.parse(localStorage.getItem('GR')||'{}');const map={ROS:'open_single',ROP:'open_pana',RJ:'jodi',RCS:'close_single',RCP:'close_pana',RTP:'triple_pana'};Object.entries(map).forEach(([el,k])=>{if(r[k])document.getElementById(el).value=r[k];});}
+function sRates(){const map={ROS:'open_single',ROP:'open_pana',RJ:'jodi',RCS:'close_single',RCP:'close_pana',RTP:'triple_pana'};const r={};Object.entries(map).forEach(([el,k])=>{r[k]=document.getElementById(el).value;});localStorage.setItem('GR',JSON.stringify(r));A('/rates','POST',r);T('Game rates saved! ✅');}
+
+// SETTINGS
+function pQR(){const url=document.getElementById('SQR').value.trim();if(!url){T('QR URL daalo','error');return;}document.getElementById('QRI').src=url;document.getElementById('QRP').style.display='block';}
+function sUPI(){const upi=document.getElementById('SUPI').value.trim();if(!upi){T('UPI ID daalo','error');return;}localStorage.setItem('US2',JSON.stringify({upi,name:document.getElementById('SUN').value}));T('UPI settings saved! ✅');}
+async function cCreds(){
+  const nu=document.getElementById('SCU').value.trim();
+  const cp=document.getElementById('SCP').value;
+  const np=document.getElementById('SNP').value;
+  const cf=document.getElementById('SCF').value;
+  if(!cp){T('Current password daalo','error');return;}
+  if(np&&np!==cf){T('New passwords match nahi karte','error');return;}
+  if(!nu&&!np){T('Kuch bhi change karo pehle','error');return;}
+  const r=await A('/change-credentials','POST',{username:nu||undefined,currentPassword:cp,newPassword:np||undefined});
+  if(r.success){T('Credentials updated! Dobara login karo');setTimeout(doLogout,2000);}
+  else{T(r.error||'Error','error');}
+}
+
+// MODAL
+function cM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mo').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});});
+
+// AUTO REFRESH
+function sAR(){setInterval(()=>{if(document.querySelector('.page.active')?.id==='dashboard')lDB();},30000);}
+
+// INIT
+if(TK){document.getElementById('loginPage').style.display='none';lDB();sAR();}
 </script>
 </body>
-</html>
+</html>  
+  
