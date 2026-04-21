@@ -272,27 +272,25 @@ router.post('/markets/:id/result', authCheck, async (req, res) => {
   try {
     const { id } = req.params;
     const { openPana, closePana } = req.body;
-    if (!openPana || !closePana) {
-      return res.status(400).json({ error: 'openPana aur closePana dono chahiye' });
+    if (!openPana) {
+  return res.status(400).json({ error: 'Open Pana required hai' });
     }
 
-    // Open ank = sum of open pana digits % 10
-    const openAnk  = String(openPana.split('').reduce((a,b) => a + parseInt(b), 0) % 10);
-    // Close ank = sum of close pana digits % 10
-    const closeAnk = String(closePana.split('').reduce((a,b) => a + parseInt(b), 0) % 10);
-    // Jodi = open ank + close ank
-    const jodi = `${openAnk}${closeAnk}`;
+const openAnk  = String(openPana.split('').reduce((a,b) => a + parseInt(b), 0) % 10);
+const closeAnk = closePana ? String(closePana.split('').reduce((a,b) => a + parseInt(b), 0) % 10) : null;
+const jodi     = closeAnk ? `${openAnk}${closeAnk}` : null;
+const status   = closePana ? 'resulted' : 'open_resulted';
 
     await db.query(
       `UPDATE markets SET
-        status='resulted',
+        status=?,
         result_single=?,
         result_jodi=?,
         result_open_pana=?,
         result_close_pana=?,
         resulted_at=NOW()
        WHERE id=?`,
-      [openAnk, jodi, openPana, closePana, id]
+      [status, openAnk, jodi, openPana, closePana||null, id]
     );
 
     const { declareResult } = require('../services/result-engine');
