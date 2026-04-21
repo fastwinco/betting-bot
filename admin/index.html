@@ -603,10 +603,13 @@ async function dRes(){
   const cp=document.getElementById('CP').value;
   if(!mId){T('Market select karo','error');return;}
   if(op.length!==3){T('Open Pana 3 digit hona chahiye','error');return;}
-  if(cp.length!==3){T('Close Pana 3 digit hona chahiye','error');return;}
+  if(cp.length>0&&cp.length!==3){T('Close Pana 3 digit hona chahiye','error');return;}
   const oa=dSum(op);const ca=dSum(cp);
-  if(!confirm(`Result declare karna chahte ho?\n\nOpen Pana: ${op} (Ank: ${oa})\nJodi: ${oa}${ca}\nClose Pana: ${cp} (Ank: ${ca})`))return;
-  const r=await A(`/markets/${mId}/result`,'POST',{openPana:op,closePana:cp});
+  const confirmMsg = cp.length===3
+  ? `Result declare?\n\nOpen Pana: ${op} (Ank: ${oa})\nJodi: ${oa}${ca}\nClose Pana: ${cp} (Ank: ${ca})`
+  : `Sirf OPEN result declare karna chahte ho?\n\nOpen Pana: ${op} (Ank: ${oa})`;
+if(!confirm(confirmMsg))return;
+const r=await A(`/markets/${mId}/result`,'POST',{openPana:op,closePana:cp||null});
   if(r.success){
     T(`🎉 Result declared!\nOpen Ank: ${r.openAnk} | Jodi: ${r.jodi} | Close Ank: ${r.closeAnk}\nWinners: ${r.summary?.totalWinners||0} | Payout: ₹${r.summary?.totalPayout||0}`);
     clRes();lRes();
