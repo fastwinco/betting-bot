@@ -80,5 +80,12 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`📊 Admin panel: http://localhost:${PORT}`);
 });
-
+setTimeout(() => {
+  try {
+    require('../bot/index.js');
+    console.log('🤖 Bot starting...');
+  } catch(e) {
+    console.error('Bot error:', e.message);
+  }
+}, 3000);
 module.exports = app;
