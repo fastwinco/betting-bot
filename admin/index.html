@@ -642,34 +642,22 @@ async function sBT(type,mId,label){
   document.getElementById('PDB').style.display='block';
   document.getElementById('PD').textContent='Loading...';
   const bets=await A(`/bets/by-market/${mId}`);
-  if(bets.error){T('Data load nahi hua: '+bets.error,'error');return;}
+  if(bets.error){T('Data load nahi hua','error');return;}
   const filtered=bets.filter(b=>b.bet_type===type);
-  let text=`╔══════════════════════════╗\n`;
-  text+=`║  ${label.toUpperCase().padEnd(24)}║\n`;
-  text+=`╚══════════════════════════╝\n\n`;
-  text+=`NUMBER     │ AMOUNT\n`;
-  text+=`───────────┼────────────────\n`;
-  if(!filtered.length){text+=`  Koi bet nahi is type mein\n`;}
-  else{filtered.forEach(b=>{text+=` ${String(b.number).padEnd(10)}│ Rs. ${parseFloat(b.total_amount).toLocaleString('en-IN')}\n`;});}
+  const mkts=await A('/markets');
+  const mkt=mkts.find(m=>m.id==mId);
+  const mktName=mkt?mkt.name.toUpperCase():'MARKET';
+  const today=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  let text=`• ${mktName} •\n`;
+  text+=`• ${label.toUpperCase()} •\n`;
+  text+=`Date- ${today}\n\n`;
+  if(!filtered.length){text+=`Koi bet nahi\n`;}
+  else{filtered.forEach(b=>{text+=`${b.number} → Rs. ${parseFloat(b.total_amount).toLocaleString('en-IN')}\n`;});}
   const total=filtered.reduce((s,b)=>s+parseFloat(b.total_amount||0),0);
-  text+=`───────────┼────────────────\n`;
-  text+=` TOTAL     │ Rs. ${total.toLocaleString('en-IN')}\n`;
-  text+=`\nTotal Bets: ${filtered.reduce((s,b)=>s+parseInt(b.count||0),0)}`;
+  text+=`\nTOTAL: Rs. ${total.toLocaleString('en-IN')}`;
   PBD=text;
   document.getElementById('PD').textContent=text;
-  T('Data ready! Copy ya download karo','success');
-}
-function cpyData(){if(!PBD){T('Pehle bet type select karo','error');return;}navigator.clipboard.writeText(PBD);T('Copied! 📋');}
-function tDB2(){const b=document.getElementById('PDB');b.style.display=b.style.display==='none'?'block':'none';}
-function dlFile(){
-  if(!PBD){T('Pehle data load karo','error');return;}
-  const blob=new Blob([PBD],{type:'text/plain;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='bet_data.txt';
-  document.body.appendChild(a);a.click();
-  document.body.removeChild(a);URL.revokeObjectURL(url);
-  T('File download ho rahi hai! ⬇️');
+  T('Ready! Copy karo 📋','success');
 }
 
 // USERS
