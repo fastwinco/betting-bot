@@ -177,18 +177,18 @@ async function handlePlay(chatId, user) {
     await send(chatId, '⏰ No markets are open right now.\n\nCheck back later!');
     return;
   }
-  let msg = `🎮 *Select Market:*\n━━━━━━━━━━━━━━━━\n\n`;
-  markets.forEach((m, i) => {
-    const status = m.status === 'open' ? '🟢 Open' : '🟡 Close Open';
-    msg += `${i + 1}. *${m.name}*\n   ${status} | Close: ${m.close_time?.slice(0,5)}\n\n`;
-  });
-  msg += `Enter market number:`;
-  sessions[chatId] = { step: 'play_select_market', markets };
-  await send(chatId, msg);
+  const buttons = markets.map((m, i) => ([{
+    text: `${m.status === 'open' ? '🟢' : '🟡'} ${m.name}`,
+    callback_data: `market_${m.id}`
+  }]));
+  await bot.sendMessage(chatId,
+    `🎮 *Select Market:*\n━━━━━━━━━━━━━━━━`,
+    {
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: buttons }
+    }
+  );
 }
-
-async function handleStep(chatId, user, text, session) {
-
   // ── PLAY FLOW ──────────────────────────────
   if (session.step === 'play_select_market') {
     const idx = parseInt(text) - 1;
@@ -498,18 +498,24 @@ async function confirmBets(chatId, user, session) {
 // 📜 BET HISTORY
 // ══════════════════════════════════════════════════
 async function handleBetHistoryMarkets(chatId, user) {
-  const [markets] = await db.query('SELECT * FROM markets ORDER BY created_at DESC LIMIT 10');
+  const [markets] = await db.query(
+    'SELECT * FROM markets ORDER BY created_at DESC LIMIT 10'
+  );
   if (!markets.length) {
     await send(chatId, '📜 No markets found.');
     return;
   }
-  let msg = `📜 *Select Market for History:*\n━━━━━━━━━━━━━━━━\n\n`;
-  markets.forEach((m, i) => {
-    msg += `${i + 1}. *${m.name}* (${m.status})\n`;
-  });
-  msg += `\nEnter market number:`;
-  sessions[chatId] = { step: 'history_select_market', markets };
-  await send(chatId, msg);
+  const buttons = markets.map(m => ([{
+    text: `${m.name} (${m.status})`,
+    callback_data: `history_${m.id}`
+  }]));
+  await bot.sendMessage(chatId,
+    `📜 *Select Market for History:*\n━━━━━━━━━━━━━━━━`,
+    {
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: buttons }
+    }
+  );
 }
 
 async function showBetHistory(chatId, user, market) {
@@ -683,4 +689,64 @@ async function notifyWin(telegramId, betType, number, betAmount, winAmount, newB
   } catch (e) {}
 }
 
+// ── CALLBACK QUERY HANDLER ────────────────────────
+bot.on('callback_query', async (query) => {
+  const chatId = query.message.chat.id;
+  const data   = query.data;
+
+  await bot.answerCallbackQuery(query.id);
+
+  const user = await getUser(String(chatId));
+  if (!user) {
+    await send(chatId, '⚠️ Please register first. Send /start');
+    return;
+  }
+
+  // Market selected for Play
+  if (data.startsWith('market_')) {
+    const marketId = parseInt(data.replace('market_', ''));
+    const [markets] = await db.query(
+      `SELECT * FROM markets WHERE status IN ('open','open_resulted')`
+    );
+    const market = markets.find(m => m.id === marketId);
+    if (!market) {
+      await send(chatId, '❌ Market not found.');
+      return;
+    }
+    sessions[chatId] = { step: 'play_enter_bets', market };
+    const isClose = market.status === 'open_resulted';
+    let msg = `✅ *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
+    if (!isClose) {
+      msg +=
+        `*Format:* \`Number=Amount\`\n\n` +
+        `*Examples:*\n` +
+        `\`4=50\` → Open Single 4, Rs.50\n` +
+        `\`12=25\` → Jodi 12, Rs.25\n` +
+        `\`126=10\` → Open Pana 126, Rs.10\n\n` +
+        `📝 *Enter bets (one per line):*`;
+    } else {
+      msg +=
+        `🟡 *Close betting open*\n\n` +
+        `*Format:* \`Number=Amount\`\n\n` +
+        `*Examples:*\n` +
+        `\`4=50\` → Close Single 4, Rs.50\n` +
+        `\`126=10\` → Close Pana 126, Rs.10\n\n` +
+        `📝 *Enter bets (one per line):*`;
+    }
+    await send(chatId, msg);
+    return;
+  }
+
+  // Market selected for History
+  if (data.startsWith('history_')) {
+    const marketId = parseInt(data.replace('history_', ''));
+    const [markets] = await db.query('SELECT * FROM markets WHERE id = ?', [marketId]);
+    if (!markets.length) {
+      await send(chatId, '❌ Market not found.');
+      return;
+    }
+    await showBetHistory(chatId, user, markets[0]);
+    return;
+  }
+});
 module.exports = { bot, sessions, broadcastResult, notifyWin };
