@@ -7,85 +7,56 @@ require('dotenv').config();
 
 const app = express();
 
-// ── MIDDLEWARE ────────────────────────────────────────────
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../admin')));
 
-// ── ROUTES ────────────────────────────────────────────────
+// Routes
 app.use('/api/sms',      require('./routes/sms'));
 app.use('/api/admin',    require('./routes/admin'));
 app.use('/api/market',   require('./routes/market'));
 app.use('/api/deposit',  require('./routes/deposit'));
 app.use('/api/withdraw', require('./routes/withdraw'));
 
-// ── ADMIN PANEL ───────────────────────────────────────────
+// Admin panel
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../admin/index.html'));
 });
 
-// ── CRON JOBS ─────────────────────────────────────────────
-
-// Har minute market status check karo
+// ── CRON — Market auto close ──────────────────────
 cron.schedule('* * * * *', async () => {
   try {
-    const db = require('../database');
+    const db  = require('../database');
     const now = new Date();
-    const timeStr = now.toTimeString().slice(0, 5); // HH:MM
+    const hh  = String(now.getHours()).padStart(2,'0');
+    const mm  = String(now.getMinutes()).padStart(2,'0');
+    const timeStr = `${hh}:${mm}`;
 
-    // Markets jo close ho gaye
     await db.query(
-      `UPDATE markets 
-       SET status = 'closed'
-       WHERE status = 'open'
-       AND close_time <= ?`,
+      `UPDATE markets SET status = 'closed'
+       WHERE status = 'open' AND close_time <= ?`,
       [timeStr]
     );
-
-    // PDF generate karo jab market close ho
-    const [closedMarkets] = await db.query(
-      `SELECT * FROM markets 
-       WHERE status = 'closed'
-       AND pdf_generated = 0`
-    );
-
-    for (const market of closedMarkets) {
-      await generateMarketPDFs(market);
-      await db.query(
-        'UPDATE markets SET pdf_generated = 1 WHERE id = ?',
-        [market.id]
-      );
-    }
-
   } catch (err) {
     console.error('Cron error:', err.message);
   }
 });
 
-// ── PDF GENERATOR ─────────────────────────────────────────
-async function generateMarketPDFs(market) {
-  try {
-    const { generateAllPDFs } = require('./services/pdf-generator');
-    await generateAllPDFs(market);
-    console.log(`✅ PDFs generated for market: ${market.name}`);
-  } catch (err) {
-    console.error('PDF generation error:', err.message);
-  }
-}
-
-// ── START SERVER ──────────────────────────────────────────
+// ── START SERVER ──────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📊 Admin panel: http://localhost:${PORT}`);
 });
+
+// ── START TELEGRAM BOT ────────────────────────────
 setTimeout(() => {
   try {
-    require('../bot/index.js');
-    console.log('🤖 Bot starting...');
-  } catch(e) {
-    console.error('Bot error:', e.message);
+    require('../bot/index');
+    console.log('🤖 Telegram Bot starting...');
+  } catch (e) {
+    console.error('Bot start error:', e.message);
   }
 }, 3000);
+
 module.exports = app;
