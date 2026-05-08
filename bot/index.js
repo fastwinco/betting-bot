@@ -749,4 +749,5 @@ bot.on('callback_query', async (query) => {
     return;
   }
 });
+
 module.exports = { bot, sessions, broadcastResult, notifyWin };
