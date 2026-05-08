@@ -602,4 +602,85 @@ async function handleAddMoney(chatId, user) {
   sessions[chatId] = { step: 'deposit_amount' };
   await send(chatId,
     `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\n` +
-    `Minimum: Rs. ${process.env.M
+    `Minimum: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
+    `Maximum: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
+    `Enter amount:`
+  );
+}
+
+// ══════════════════════════════════════════════════
+// 📊 GAME RATE
+// ══════════════════════════════════════════════════
+async function handleGameRate(chatId) {
+  await send(chatId,
+    `📊 *Game Rates*\n━━━━━━━━━━━━━━━━\n\n` +
+    `🔢 *Open Single* → 9x\n` +
+    `🔵 *Open Pana* → 150x\n` +
+    `🟡 *Jodi* → 90x\n` +
+    `🔴 *Close Single* → 9x\n` +
+    `🟠 *Close Pana* → 300x\n` +
+    `⚫ *Triple Pana* → 1000x\n\n` +
+    `_Example: Rs.100 bet on Jodi = Rs.9,000 win_`,
+    MAIN_MENU
+  );
+}
+
+// ══════════════════════════════════════════════════
+// ❓ HELP
+// ══════════════════════════════════════════════════
+async function handleHelp(chatId) {
+  const supportNumber = process.env.SUPPORT_PHONE || '919999999999';
+  await send(chatId,
+    `❓ *Help & Support*\n━━━━━━━━━━━━━━━━\n\n` +
+    `For any help, contact us on WhatsApp:\n\n` +
+    `[👆 Click to WhatsApp](https://wa.me/${supportNumber})\n\n` +
+    `📱 *${supportNumber}*\n\n` +
+    `⏰ Support hours: 10 AM - 10 PM`,
+    MAIN_MENU
+  );
+}
+
+// ══════════════════════════════════════════════════
+// RESULT NOTIFICATION (called from admin panel)
+// ══════════════════════════════════════════════════
+async function broadcastResult(marketName, openPana, openAnk, jodi, closePana, closeAnk) {
+  try {
+    const [users] = await db.query(`SELECT whatsapp_number FROM users WHERE status='active'`);
+    const msg =
+      `🎲 *RESULT DECLARED!*\n━━━━━━━━━━━━━━━━\n\n` +
+      `🏪 *${marketName}*\n\n` +
+      `*OPEN*\n` +
+      `Pana: *${openPana}* | Ank: *${openAnk}*\n\n` +
+      `*JODI: ${jodi || '—'}*\n\n` +
+      `*CLOSE*\n` +
+      `Pana: *${closePana || '—'}* | Ank: *${closeAnk || '—'}*\n\n` +
+      `_Place your next bet!_ 🎯`;
+
+    for (const u of users) {
+      try {
+        await bot.sendMessage(u.whatsapp_number, msg, { parse_mode: 'Markdown' });
+        await new Promise(r => setTimeout(r, 150));
+      } catch (e) {}
+    }
+  } catch (e) {
+    console.error('Broadcast error:', e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════
+// WIN NOTIFICATION
+// ══════════════════════════════════════════════════
+async function notifyWin(telegramId, betType, number, betAmount, winAmount, newBalance) {
+  try {
+    await bot.sendMessage(telegramId,
+      `🏆 *YOU WON!*\n━━━━━━━━━━━━━━━━\n\n` +
+      `🎮 ${betType.replace('_',' ').toUpperCase()}: *${number}*\n` +
+      `💰 Bet: Rs. ${betAmount}\n` +
+      `🎉 Won: *Rs. ${winAmount}*\n\n` +
+      `💰 New Balance: *Rs. ${newBalance}*`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (e) {}
+}
+
+module.exports = { bot, sessions, broadcastResult, notifyWin };
