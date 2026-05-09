@@ -89,24 +89,7 @@ bot.on('callback_query', async (query) => {
     const market  = markets[0];
     const isClose = market.status === 'open_resulted';
     sessions[chatId] = { step: 'play_enter_bets', market };
-    let msg = `✅ *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
-    if (!isClose) {
-      msg +=
-        `*Format:* \`Number=Amount\`\n\n` +
-        `*Examples:*\n` +
-        `\`4=50\` → Open Single 4, Rs.50\n` +
-        `\`12=25\` → Jodi 12, Rs.25\n` +
-        `\`126=10\` → Open Pana 126, Rs.10\n\n` +
-        `📝 *Enter bets (one per line):*`;
-    } else {
-      msg +=
-        `🟡 *Close betting is open*\n\n` +
-        `*Format:* \`Number=Amount\`\n\n` +
-        `*Examples:*\n` +
-        `\`4=50\` → Close Single 4, Rs.50\n` +
-        `\`126=10\` → Close Pana 126, Rs.10\n\n` +
-        `📝 *Enter bets (one per line):*`;
-    }
+    
     await send(chatId, msg);
     return;
   }
@@ -126,7 +109,8 @@ bot.on('callback_query', async (query) => {
   }
 
   // ── WALLET BUTTONS ──────────────────────────
-  if (data === 'wallet_add') {
+  if (data ==const status = isClose ? '🟡 Close Betting Open' : '🟢 Open Betting';
+    const msg = `✅ *${market.name}*\n${status}\n\nEnter bets:`;= 'wallet_add') {
     sessions[chatId] = { step: 'deposit_amount' };
     await send(chatId,
       `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\n` +
@@ -466,7 +450,7 @@ async function processBets(chatId, user, text, market) {
   const errors = [];
 
   for (const line of lines) {
-    const match = line.match(/^(\d+)\s*[=\-\.,:]\s*(\d+)$/);
+    const match = line.match(/^(\d+)\s*[=\-\.\,\:\s]+\s*(\d+)$/);
     if (!match) {
       errors.push(`❌ Invalid: \`${line}\``);
       continue;
