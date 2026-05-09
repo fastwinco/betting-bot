@@ -598,7 +598,7 @@ async function handleWallet(chatId, user) {
     [u.id]
   );
   const s = stats[0];
-  await send(chatId,
+  await bot.sendMessage(chatId,
     `👛 *Your Wallet*\n━━━━━━━━━━━━━━━━\n\n` +
     `💰 Balance: *Rs. ${u.wallet_balance}*\n\n` +
     `📊 *Stats:*\n` +
@@ -606,7 +606,17 @@ async function handleWallet(chatId, user) {
     `• Total Wagered: Rs. ${s.bet_amount}\n` +
     `• Total Won: Rs. ${s.won}\n` +
     `• ✅ Wins: ${s.wins} | ❌ Losses: ${s.losses} | ⏳ Pending: ${s.pending}`,
-    MAIN_MENU
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '➕ Add Money', callback_data: 'wallet_add' },
+            { text: '🏧 Withdraw',  callback_data: 'wallet_withdraw' }
+          ]
+        ]
+      }
+    }
   );
 }
 
