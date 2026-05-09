@@ -69,7 +69,7 @@ bot.on('callback_query', async (query) => {
     return;
   }
 
-  // Market selected for Play
+  // ── MARKET SELECT FOR PLAY ──────────────────
   if (data.startsWith('market_')) {
     const marketId = parseInt(data.replace('market_', ''));
     const [markets] = await db.query(
@@ -105,15 +105,51 @@ bot.on('callback_query', async (query) => {
     return;
   }
 
-  // Market selected for History
+  // ── MARKET SELECT FOR HISTORY ───────────────
   if (data.startsWith('history_')) {
     const marketId = parseInt(data.replace('history_', ''));
-    const [markets] = await db.query('SELECT * FROM markets WHERE id = ?', [marketId]);
+    const [markets] = await db.query(
+      'SELECT * FROM markets WHERE id = ?', [marketId]
+    );
     if (!markets.length) {
       await send(chatId, '❌ Market not found.');
       return;
     }
     await showBetHistory(chatId, user, markets[0]);
+    return;
+  }
+
+  // ── WALLET BUTTONS ──────────────────────────
+  if (data === 'wallet_add') {
+    sessions[chatId] = { step: 'deposit_amount' };
+    await send(chatId,
+      `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\n` +
+      `Minimum: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
+      `Maximum: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
+      `Enter amount:`
+    );
+    return;
+  }
+
+  if (data === 'wallet_withdraw') {
+    const MIN = parseFloat(process.env.MIN_WITHDRAW || 200);
+    const freshUser = await getUser(String(chatId));
+    if (freshUser.wallet_balance < MIN) {
+      await send(chatId,
+        `❌ *Insufficient Balance*\n\n` +
+        `Your balance: Rs. ${freshUser.wallet_balance}\n` +
+        `Minimum withdrawal: Rs. ${MIN}`
+      );
+      return;
+    }
+    sessions[chatId] = { step: 'withdraw_amount' };
+    await send(chatId,
+      `🏧 *Withdrawal*\n━━━━━━━━━━━━━━━━\n\n` +
+      `Balance: *Rs. ${freshUser.wallet_balance}*\n` +
+      `Minimum: Rs. ${MIN}\n` +
+      `Maximum: Rs. ${process.env.MAX_WITHDRAW || 25000}\n\n` +
+      `Enter amount:`
+    );
     return;
   }
 });
@@ -154,7 +190,9 @@ bot.on('message', async (msg) => {
         await verifyAndCredit(parsed, 'screenshot', String(chatId), bot, 'telegram');
         delete sessions[chatId];
       } catch (e) {
-        await send(chatId, '❌ Error processing screenshot.\n\nPlease enter *UTR number* manually:');
+        await send(chatId,
+          '❌ Error processing screenshot.\n\nPlease enter *UTR number* manually:'
+        );
         sessions[chatId] = { step: 'manual_utr', depositAmount: sessions[chatId]?.depositAmount };
       }
     } else {
@@ -305,7 +343,7 @@ async function handleStep(chatId, user, text, session) {
       `📱 UPI ID: \`${adminUPI}\`\n` +
       `👤 Name: *${adminName}*\n` +
       `💰 Amount: *Rs. ${amount}*\n\n` +
-      `After payment, send *screenshot* here.\n` +
+      `After payment send *screenshot* here.\n` +
       `⏳ Valid for 30 minutes.`,
       {
         parse_mode: 'Markdown',
@@ -348,10 +386,11 @@ async function handleStep(chatId, user, text, session) {
       await send(chatId, `❌ Maximum withdrawal is Rs. ${MAX}`);
       return;
     }
-    if (amount > user.wallet_balance) {
+    const freshUser = await getUser(String(chatId));
+    if (amount > freshUser.wallet_balance) {
       await send(chatId,
         `❌ *Insufficient balance!*\n\n` +
-        `Your balance: Rs. ${user.wallet_balance}\n` +
+        `Your balance: Rs. ${freshUser.wallet_balance}\n` +
         `Amount entered: Rs. ${amount}`
       );
       return;
@@ -360,7 +399,7 @@ async function handleStep(chatId, user, text, session) {
     await send(chatId,
       `📋 *Confirm Withdrawal:*\n━━━━━━━━━━━━━━━━\n\n` +
       `💰 Amount: *Rs. ${amount}*\n` +
-      `📱 UPI: *${user.upi_id}*\n\n` +
+      `📱 UPI: *${freshUser.upi_id}*\n\n` +
       `Send *YES* to confirm or *NO* to cancel`
     );
     return;
@@ -376,20 +415,21 @@ async function handleStep(chatId, user, text, session) {
       await send(chatId, 'Send *YES* or *NO*');
       return;
     }
+    const freshUser = await getUser(String(chatId));
     await db.query(
       'UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?',
-      [session.amount, user.id]
+      [session.amount, freshUser.id]
     );
     await db.query(
       `INSERT INTO withdrawals (user_id, amount, upi_id, status, created_at)
        VALUES (?, ?, ?, 'pending', NOW())`,
-      [user.id, session.amount, user.upi_id]
+      [freshUser.id, session.amount, freshUser.upi_id]
     );
     delete sessions[chatId];
     await send(chatId,
       `✅ *Withdrawal Request Submitted!*\n━━━━━━━━━━━━━━━━\n\n` +
       `💰 Amount: *Rs. ${session.amount}*\n` +
-      `📱 UPI: *${user.upi_id}*\n` +
+      `📱 UPI: *${freshUser.upi_id}*\n` +
       `🕐 Processing: 1-4 hours\n\n` +
       `You will be notified when payment is done! 🔔`,
       MAIN_MENU
@@ -399,8 +439,8 @@ async function handleStep(chatId, user, text, session) {
       if (adminId) {
         await bot.sendMessage(adminId,
           `🔔 *New Withdrawal Request!*\n━━━━━━━━━━━━━━━━\n\n` +
-          `👤 User: ${user.name}\n` +
-          `📱 UPI: ${user.upi_id}\n` +
+          `👤 User: ${freshUser.name}\n` +
+          `📱 UPI: ${freshUser.upi_id}\n` +
           `💰 Amount: Rs. ${session.amount}\n\n` +
           `Check admin panel!`,
           { parse_mode: 'Markdown' }
@@ -451,11 +491,13 @@ async function processBets(chatId, user, text, market) {
   }
 
   const totalAmount = bets.reduce((s, b) => s + b.amount, 0);
-  if (totalAmount > user.wallet_balance) {
+  const freshUser   = await getUser(String(chatId));
+
+  if (totalAmount > freshUser.wallet_balance) {
     await send(chatId,
       `❌ *Insufficient balance!*\n\n` +
       `Total: Rs. ${totalAmount}\n` +
-      `Balance: Rs. ${user.wallet_balance}`
+      `Balance: Rs. ${freshUser.wallet_balance}`
     );
     return;
   }
@@ -467,7 +509,7 @@ async function processBets(chatId, user, text, market) {
   if (errors.length) msg += `\n⚠️ *Skipped:*\n${errors.join('\n')}\n`;
   msg +=
     `\n💰 *Total: Rs. ${totalAmount}*\n` +
-    `💰 Balance after: Rs. ${user.wallet_balance - totalAmount}\n\n` +
+    `💰 Balance after: Rs. ${freshUser.wallet_balance - totalAmount}\n\n` +
     `Send *YES* to confirm or *NO* to cancel`;
 
   sessions[chatId] = { step: 'play_confirm', market, bets, totalAmount };
@@ -501,21 +543,22 @@ function detectBetType(number, marketStatus) {
 
 async function confirmBets(chatId, user, session) {
   const { bets, market, totalAmount } = session;
+  const freshUser = await getUser(String(chatId));
   for (const bet of bets) {
     await db.query(
       `INSERT INTO bets
         (user_id, market_id, bet_type, number, amount, multiplier, possible_win, status, placed_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-      [user.id, market.id, bet.betType.key, bet.number,
+      [freshUser.id, market.id, bet.betType.key, bet.number,
        bet.amount, bet.betType.multiplier, bet.amount * bet.betType.multiplier]
     );
   }
   await db.query(
     'UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?',
-    [totalAmount, user.id]
+    [totalAmount, freshUser.id]
   );
   const [updated] = await db.query(
-    'SELECT wallet_balance FROM users WHERE id = ?', [user.id]
+    'SELECT wallet_balance FROM users WHERE id = ?', [freshUser.id]
   );
   delete sessions[chatId];
   let msg = `✅ *${bets.length} Bet(s) Placed!*\n━━━━━━━━━━━━━━━━\n\n`;
@@ -609,12 +652,10 @@ async function handleWallet(chatId, user) {
     {
       parse_mode: 'Markdown',
       reply_markup: {
-        inline_keyboard: [
-          [
-            { text: '➕ Add Money', callback_data: 'wallet_add' },
-            { text: '🏧 Withdraw',  callback_data: 'wallet_withdraw' }
-          ]
-        ]
+        inline_keyboard: [[
+          { text: '➕ Add Money',  callback_data: 'wallet_add'      },
+          { text: '🏧 Withdraw',   callback_data: 'wallet_withdraw' }
+        ]]
       }
     }
   );
@@ -639,7 +680,6 @@ async function handleTransaction(chatId, user) {
   const all = [...deps, ...wds]
     .sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 10);
-
   if (!all.length) {
     await send(chatId, '📋 No transactions yet.', MAIN_MENU);
     return;
@@ -648,7 +688,7 @@ async function handleTransaction(chatId, user) {
   all.forEach(t => {
     const icon   = t.type === 'Deposit' ? '💰' : '🏧';
     const status = (t.status === 'approved' || t.status === 'paid') ? '✅' :
-                   t.status === 'rejected' ? '❌' : '⏳';
+                    t.status === 'rejected' ? '❌' : '⏳';
     const date   = new Date(t.created_at).toLocaleDateString('en-IN',
       { day: 'numeric', month: 'short' });
     msg += `${icon} ${t.type}: *Rs. ${t.amount}* ${status} (${date})\n`;
