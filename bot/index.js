@@ -376,7 +376,7 @@ async function handleStep(chatId, user, text, session) {
   // ── WITHDRAWAL FLOW ────────────────────────
   if (session.step === 'withdraw_amount') {
     const amount = parseFloat(text);
-    const MIN    = parseFloat(process.env.MIN_WITHDRAW || 200);
+    const MIN    = parseFloat(process.env.MIN_WITHDRAW || 500);
     const MAX    = parseFloat(process.env.MAX_WITHDRAW || 25000);
     if (isNaN(amount) || amount < MIN) {
       await send(chatId, `❌ Minimum withdrawal is Rs. ${MIN}`);
