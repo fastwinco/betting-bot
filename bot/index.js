@@ -695,8 +695,8 @@ async function handleAddMoney(chatId, user) {
   sessions[chatId] = { step: 'deposit_amount' };
   await send(chatId,
     `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\n` +
-    `Min: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
-    `Max: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
+    `💵 Min: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
+    `💵 Max: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
     `Enter amount:`
   );
 }
