@@ -144,6 +144,22 @@ bot.on('callback_query', async (query) => {
     );
     return;
   }
+  // Bet confirm buttons
+  if (data === 'bet_yes') {
+    const session = sessions[chatId];
+    if (!session || session.step !== 'play_confirm') {
+      await send(chatId, '⚠️ Session expired. Please place bets again.');
+      return;
+    }
+    await confirmBets(chatId, user, session);
+    return;
+  }
+
+  if (data === 'bet_no') {
+    delete sessions[chatId];
+    await send(chatId, '❌ Bets cancelled.', MAIN_MENU);
+    return;
+  }
 });
 
 // ── MESSAGE HANDLER ──────────────────────────────
@@ -480,7 +496,15 @@ async function processBets(chatId, user, text, market) {
     `*YES* confirm | *NO* cancel`;
 
   sessions[chatId] = { step: 'play_confirm', market, bets, totalAmount };
-  await send(chatId, msg);
+  await bot.sendMessage(chatId, msg, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '✅ YES - Confirm', callback_data: 'bet_yes' },
+        { text: '❌ NO - Cancel',   callback_data: 'bet_no'  }
+      ]]
+    }
+  });
 }
 
 function detectBetType(number, marketStatus) {
