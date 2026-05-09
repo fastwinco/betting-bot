@@ -2,7 +2,13 @@ const TelegramBot = require('node-telegram-bot-api');
 const db = require('../database');
 require('dotenv').config();
 
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
+  polling: {
+    interval: 1000,
+    autoStart: true,
+    params: { timeout: 10 }
+  }
+});
 const sessions = {};
 
 console.log('✅ FastWin Telegram Bot started!');
