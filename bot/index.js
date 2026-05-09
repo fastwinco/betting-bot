@@ -13,7 +13,6 @@ const sessions = {};
 
 console.log('✅ FastWin Telegram Bot started!');
 
-// ── HELPERS ──────────────────────────────────────
 async function send(chatId, text, opts = {}) {
   try {
     await bot.sendMessage(chatId, text, { parse_mode: 'Markdown', ...opts });
@@ -30,7 +29,6 @@ async function getUser(telegramId) {
   return rows[0] || null;
 }
 
-// ── MAIN MENU ────────────────────────────────────
 const MAIN_MENU = {
   reply_markup: {
     keyboard: [
@@ -63,7 +61,7 @@ bot.onText(/\/start/, async (msg) => {
   );
 });
 
-// ── CALLBACK QUERY HANDLER ────────────────────────
+// ── CALLBACK QUERY ────────────────────────────────
 bot.on('callback_query', async (query) => {
   const chatId = query.message.chat.id;
   const data   = query.data;
@@ -75,7 +73,7 @@ bot.on('callback_query', async (query) => {
     return;
   }
 
-  // ── MARKET SELECT FOR PLAY ──────────────────
+  // Market for Play
   if (data.startsWith('market_')) {
     const marketId = parseInt(data.replace('market_', ''));
     const [markets] = await db.query(
@@ -89,12 +87,14 @@ bot.on('callback_query', async (query) => {
     const market  = markets[0];
     const isClose = market.status === 'open_resulted';
     sessions[chatId] = { step: 'play_enter_bets', market };
-    
-    await send(chatId, msg);
+    const statusText = isClose ? '🟡 Close Betting Open' : '🟢 Open Betting';
+    await send(chatId,
+      `✅ *${market.name}*\n${statusText}\n\nEnter bets:`
+    );
     return;
   }
 
-  // ── MARKET SELECT FOR HISTORY ───────────────
+  // Market for History
   if (data.startsWith('history_')) {
     const marketId = parseInt(data.replace('history_', ''));
     const [markets] = await db.query(
@@ -108,22 +108,21 @@ bot.on('callback_query', async (query) => {
     return;
   }
 
-  // ── WALLET BUTTONS ──────────────────────────
-  if (data ==const status = isClose ? '🟡 Close Betting Open' : '🟢 Open Betting';
-    const msg = `✅ *${market.name}*\n${status}\n\nEnter bets:`;= 'wallet_add') {
+  // Wallet buttons
+  if (data === 'wallet_add') {
     sessions[chatId] = { step: 'deposit_amount' };
     await send(chatId,
       `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\n` +
-      `Minimum: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
-      `Maximum: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
+      `Min: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
+      `Max: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
       `Enter amount:`
     );
     return;
   }
 
   if (data === 'wallet_withdraw') {
-    const MIN = parseFloat(process.env.MIN_WITHDRAW || 200);
     const freshUser = await getUser(String(chatId));
+    const MIN = parseFloat(process.env.MIN_WITHDRAW || 200);
     if (freshUser.wallet_balance < MIN) {
       await send(chatId,
         `❌ *Insufficient Balance*\n\n` +
@@ -136,8 +135,8 @@ bot.on('callback_query', async (query) => {
     await send(chatId,
       `🏧 *Withdrawal*\n━━━━━━━━━━━━━━━━\n\n` +
       `Balance: *Rs. ${freshUser.wallet_balance}*\n` +
-      `Minimum: Rs. ${MIN}\n` +
-      `Maximum: Rs. ${process.env.MAX_WITHDRAW || 25000}\n\n` +
+      `Min: Rs. ${MIN}\n` +
+      `Max: Rs. ${process.env.MAX_WITHDRAW || 25000}\n\n` +
       `Enter amount:`
     );
     return;
@@ -152,7 +151,7 @@ bot.on('message', async (msg) => {
 
   if (!text && !photo) return;
 
-  // Photo — deposit screenshot
+  // Screenshot
   if (photo) {
     const session = sessions[chatId];
     if (session?.step === 'awaiting_screenshot') {
@@ -171,18 +170,14 @@ bot.on('message', async (msg) => {
         const { data: { text: ocrText } } = await Tesseract.recognize(enhanced, 'eng', { logger: () => {} });
         const parsed = parseSMS(ocrText);
         if (!parsed) {
-          await send(chatId,
-            '❌ Could not read screenshot.\n\nPlease enter *UTR number* manually:'
-          );
+          await send(chatId, '❌ Could not read screenshot.\n\nEnter *UTR number* manually:');
           sessions[chatId] = { step: 'manual_utr', depositAmount: session.depositAmount };
           return;
         }
         await verifyAndCredit(parsed, 'screenshot', String(chatId), bot, 'telegram');
         delete sessions[chatId];
       } catch (e) {
-        await send(chatId,
-          '❌ Error processing screenshot.\n\nPlease enter *UTR number* manually:'
-        );
+        await send(chatId, '❌ Error processing screenshot.\n\nEnter *UTR number* manually:');
         sessions[chatId] = { step: 'manual_utr', depositAmount: sessions[chatId]?.depositAmount };
       }
     } else {
@@ -196,13 +191,11 @@ bot.on('message', async (msg) => {
   const user    = await getUser(String(chatId));
   const session = sessions[chatId];
 
-  // ── REGISTRATION ────────────────────────────
+  // Registration
   if (session?.step === 'ask_name') {
     if (text.length < 2) { await send(chatId, '❌ Enter a valid name.'); return; }
     sessions[chatId] = { step: 'ask_upi', name: text };
-    await send(chatId,
-      `✅ Name: *${text}*\n\nEnter your *UPI ID*:\n_Example: name@ybl_`
-    );
+    await send(chatId, `✅ Name: *${text}*\n\nEnter your *UPI ID*:\n_Example: name@ybl_`);
     return;
   }
 
@@ -221,8 +214,7 @@ bot.on('message', async (msg) => {
       `🎉 *Registration Complete!*\n\n` +
       `👤 Name: *${session.name}*\n` +
       `💳 UPI: *${text.toLowerCase()}*\n` +
-      `💰 Balance: *Rs. 0*\n\n` +
-      `Use the menu below! 🎯`,
+      `💰 Balance: *Rs. 0*`,
       MAIN_MENU
     );
     return;
@@ -233,29 +225,15 @@ bot.on('message', async (msg) => {
     return;
   }
 
-  // ── MENU COMMANDS ────────────────────────────
+  // Menu
   switch (text) {
-    case '🎮 Play':
-      await handlePlay(chatId, user);
-      break;
-    case '📜 Bet History':
-      await handleBetHistoryMarkets(chatId, user);
-      break;
-    case '👛 Wallet':
-      await handleWallet(chatId, user);
-      break;
-    case '📋 Transaction':
-      await handleTransaction(chatId, user);
-      break;
-    case '➕ Add Money':
-      await handleAddMoney(chatId, user);
-      break;
-    case '📊 Game Rate':
-      await handleGameRate(chatId);
-      break;
-    case '❓ Help':
-      await handleHelp(chatId);
-      break;
+    case '🎮 Play':      await handlePlay(chatId, user);             break;
+    case '📜 Bet History': await handleBetHistoryMarkets(chatId, user); break;
+    case '👛 Wallet':    await handleWallet(chatId, user);           break;
+    case '📋 Transaction': await handleTransaction(chatId, user);    break;
+    case '➕ Add Money': await handleAddMoney(chatId, user);         break;
+    case '📊 Game Rate': await handleGameRate(chatId);               break;
+    case '❓ Help':      await handleHelp(chatId);                   break;
     default:
       if (session) await handleStep(chatId, user, text, session);
       break;
@@ -270,7 +248,7 @@ async function handlePlay(chatId, user) {
     `SELECT * FROM markets WHERE status IN ('open','open_resulted') ORDER BY open_time`
   );
   if (!markets.length) {
-    await send(chatId, '⏰ No markets are open right now.\n\nCheck back later!');
+    await send(chatId, '⏰ No markets open right now. Check back later!');
     return;
   }
   const buttons = markets.map(m => ([{
@@ -278,11 +256,8 @@ async function handlePlay(chatId, user) {
     callback_data: `market_${m.id}`
   }]));
   await bot.sendMessage(chatId,
-    `🎮 *Select Market:*\n━━━━━━━━━━━━━━━━`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: { inline_keyboard: buttons }
-    }
+    `🎮 *Select Market:*`,
+    { parse_mode: 'Markdown', reply_markup: { inline_keyboard: buttons } }
   );
 }
 
@@ -291,19 +266,21 @@ async function handlePlay(chatId, user) {
 // ══════════════════════════════════════════════════
 async function handleStep(chatId, user, text, session) {
 
-  // ── PLAY FLOW ──────────────────────────────
+  // Play bets entry
   if (session.step === 'play_enter_bets') {
     await processBets(chatId, user, text, session.market);
     return;
   }
 
+  // Confirm bets
   if (session.step === 'play_confirm') {
-    if (text.toUpperCase() === 'NO') {
+    const t = text.toUpperCase();
+    if (t === 'NO' || t === 'CANCEL') {
       delete sessions[chatId];
       await send(chatId, '❌ Bets cancelled.', MAIN_MENU);
       return;
     }
-    if (text.toUpperCase() === 'YES') {
+    if (t === 'YES' || t === 'OK' || t === 'Y') {
       await confirmBets(chatId, user, session);
       return;
     }
@@ -311,7 +288,7 @@ async function handleStep(chatId, user, text, session) {
     return;
   }
 
-  // ── DEPOSIT FLOW ───────────────────────────
+  // Deposit amount
   if (session.step === 'deposit_amount') {
     const amount = parseFloat(text);
     const MIN    = parseFloat(process.env.MIN_DEPOSIT || 100);
@@ -330,24 +307,22 @@ async function handleStep(chatId, user, text, session) {
     sessions[chatId] = { step: 'awaiting_screenshot', depositAmount: amount };
     await bot.sendMessage(chatId,
       `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
-      `📱 UPI ID: \`${adminUPI}\`\n` +
+      `📱 UPI: \`${adminUPI}\`\n` +
       `👤 Name: *${adminName}*\n` +
       `💰 Amount: *Rs. ${amount}*\n\n` +
       `After payment send *screenshot* here.\n` +
-      `⏳ Valid for 30 minutes.`,
+      `⏳ Valid 30 minutes.`,
       {
         parse_mode: 'Markdown',
         reply_markup: {
-          inline_keyboard: [[{
-            text: `💳 Pay Rs. ${amount}`,
-            url: upiLink
-          }]]
+          inline_keyboard: [[{ text: `💳 Pay Rs. ${amount}`, url: upiLink }]]
         }
       }
     );
     return;
   }
 
+  // Manual UTR
   if (session.step === 'manual_utr') {
     const utr = text.trim().toUpperCase();
     if (utr.length < 10) {
@@ -363,11 +338,12 @@ async function handleStep(chatId, user, text, session) {
     return;
   }
 
-  // ── WITHDRAWAL FLOW ────────────────────────
+  // Withdraw amount
   if (session.step === 'withdraw_amount') {
-    const amount = parseFloat(text);
-    const MIN    = parseFloat(process.env.MIN_WITHDRAW || 500);
-    const MAX    = parseFloat(process.env.MAX_WITHDRAW || 25000);
+    const amount    = parseFloat(text);
+    const MIN       = parseFloat(process.env.MIN_WITHDRAW || 200);
+    const MAX       = parseFloat(process.env.MAX_WITHDRAW || 25000);
+    const freshUser = await getUser(String(chatId));
     if (isNaN(amount) || amount < MIN) {
       await send(chatId, `❌ Minimum withdrawal is Rs. ${MIN}`);
       return;
@@ -376,18 +352,15 @@ async function handleStep(chatId, user, text, session) {
       await send(chatId, `❌ Maximum withdrawal is Rs. ${MAX}`);
       return;
     }
-    const freshUser = await getUser(String(chatId));
     if (amount > freshUser.wallet_balance) {
       await send(chatId,
-        `❌ *Insufficient balance!*\n\n` +
-        `Your balance: Rs. ${freshUser.wallet_balance}\n` +
-        `Amount entered: Rs. ${amount}`
+        `❌ Insufficient balance!\n\nBalance: Rs. ${freshUser.wallet_balance}`
       );
       return;
     }
     sessions[chatId] = { step: 'withdraw_confirm', amount };
     await send(chatId,
-      `📋 *Confirm Withdrawal:*\n━━━━━━━━━━━━━━━━\n\n` +
+      `📋 *Confirm Withdrawal*\n━━━━━━━━━━━━━━━━\n\n` +
       `💰 Amount: *Rs. ${amount}*\n` +
       `📱 UPI: *${freshUser.upi_id}*\n\n` +
       `Send *YES* to confirm or *NO* to cancel`
@@ -395,13 +368,15 @@ async function handleStep(chatId, user, text, session) {
     return;
   }
 
+  // Withdraw confirm
   if (session.step === 'withdraw_confirm') {
-    if (text.toUpperCase() === 'NO') {
+    const t = text.toUpperCase();
+    if (t === 'NO' || t === 'CANCEL') {
       delete sessions[chatId];
       await send(chatId, '❌ Withdrawal cancelled.', MAIN_MENU);
       return;
     }
-    if (text.toUpperCase() !== 'YES') {
+    if (t !== 'YES' && t !== 'Y') {
       await send(chatId, 'Send *YES* or *NO*');
       return;
     }
@@ -417,22 +392,21 @@ async function handleStep(chatId, user, text, session) {
     );
     delete sessions[chatId];
     await send(chatId,
-      `✅ *Withdrawal Request Submitted!*\n━━━━━━━━━━━━━━━━\n\n` +
+      `✅ *Withdrawal Submitted!*\n━━━━━━━━━━━━━━━━\n\n` +
       `💰 Amount: *Rs. ${session.amount}*\n` +
       `📱 UPI: *${freshUser.upi_id}*\n` +
       `🕐 Processing: 1-4 hours\n\n` +
-      `You will be notified when payment is done! 🔔`,
+      `You will be notified when paid! 🔔`,
       MAIN_MENU
     );
     try {
       const adminId = process.env.ADMIN_TELEGRAM_ID;
       if (adminId) {
         await bot.sendMessage(adminId,
-          `🔔 *New Withdrawal Request!*\n━━━━━━━━━━━━━━━━\n\n` +
-          `👤 User: ${freshUser.name}\n` +
-          `📱 UPI: ${freshUser.upi_id}\n` +
-          `💰 Amount: Rs. ${session.amount}\n\n` +
-          `Check admin panel!`,
+          `🔔 *New Withdrawal!*\n\n` +
+          `👤 ${freshUser.name}\n` +
+          `📱 ${freshUser.upi_id}\n` +
+          `💰 Rs. ${session.amount}\n\nCheck admin panel!`,
           { parse_mode: 'Markdown' }
         );
       }
@@ -450,21 +424,22 @@ async function processBets(chatId, user, text, market) {
   const errors = [];
 
   for (const line of lines) {
-    const match = line.match(/^(\d+)\s*[=\-\.\,\:\s]+\s*(\d+)$/);
+    // Accept =, -, ., ,, :, space as separator
+    const match = line.match(/^(\d+)\s*[=\-\.\,\:\s]\s*(\d+)$/);
     if (!match) {
-      errors.push(`❌ Invalid: \`${line}\``);
+      errors.push(`❌ \`${line}\``);
       continue;
     }
     const number = match[1];
     const amount = parseFloat(match[2]);
     const MIN    = parseFloat(process.env.MIN_BET || 10);
-    if (amount < MIN) {
+    if (isNaN(amount) || amount < MIN) {
       errors.push(`❌ Min Rs.${MIN}: \`${line}\``);
       continue;
     }
     const betType = detectBetType(number, market.status);
     if (!betType) {
-      errors.push(`❌ Invalid number: \`${number}\``);
+      errors.push(`❌ Invalid: \`${number}\``);
       continue;
     }
     bets.push({ number, amount, betType });
@@ -472,10 +447,9 @@ async function processBets(chatId, user, text, market) {
 
   if (!bets.length) {
     await send(chatId,
-      `❌ *No valid bets!*\n\n` +
+      `❌ No valid bets found.\n\n` +
       `${errors.join('\n')}\n\n` +
-      `*Format:* \`Number=Amount\`\n` +
-      `Example:\n\`4=50\`\n\`12=25\`\n\`126=10\``
+      `*Example:*\n4=50\n12=25\n126=10`
     );
     return;
   }
@@ -492,15 +466,15 @@ async function processBets(chatId, user, text, market) {
     return;
   }
 
-  let msg = `📋 *Confirm Bets — ${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
+  let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
   bets.forEach(b => {
-    msg += `${b.betType.label}: *${b.number}* → Rs. ${b.amount} (${b.betType.multiplier}x)\n`;
+    msg += `${b.betType.label}: *${b.number}* → Rs. ${b.amount}\n`;
   });
-  if (errors.length) msg += `\n⚠️ *Skipped:*\n${errors.join('\n')}\n`;
+  if (errors.length) msg += `\n⚠️ Skipped:\n${errors.join('\n')}\n`;
   msg +=
-    `\n💰 *Total: Rs. ${totalAmount}*\n` +
-    `💰 Balance after: Rs. ${freshUser.wallet_balance - totalAmount}\n\n` +
-    `Send *YES* to confirm or *NO* to cancel`;
+    `\n💰 Total: *Rs. ${totalAmount}*\n` +
+    `💰 After: Rs. ${freshUser.wallet_balance - totalAmount}\n\n` +
+    `*YES* confirm | *NO* cancel`;
 
   sessions[chatId] = { step: 'play_confirm', market, bets, totalAmount };
   await send(chatId, msg);
@@ -509,6 +483,7 @@ async function processBets(chatId, user, text, market) {
 function detectBetType(number, marketStatus) {
   const isClose = marketStatus === 'open_resulted';
   const len     = number.length;
+
   if (len === 1) {
     return isClose
       ? { key: 'close_single', label: 'Close Single', multiplier: 9 }
@@ -534,6 +509,7 @@ function detectBetType(number, marketStatus) {
 async function confirmBets(chatId, user, session) {
   const { bets, market, totalAmount } = session;
   const freshUser = await getUser(String(chatId));
+
   for (const bet of bets) {
     await db.query(
       `INSERT INTO bets
@@ -543,22 +519,27 @@ async function confirmBets(chatId, user, session) {
        bet.amount, bet.betType.multiplier, bet.amount * bet.betType.multiplier]
     );
   }
+
   await db.query(
     'UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?',
     [totalAmount, freshUser.id]
   );
+
   const [updated] = await db.query(
     'SELECT wallet_balance FROM users WHERE id = ?', [freshUser.id]
   );
+
   delete sessions[chatId];
+
   let msg = `✅ *${bets.length} Bet(s) Placed!*\n━━━━━━━━━━━━━━━━\n\n`;
   bets.forEach(b => {
     msg += `${b.betType.label}: *${b.number}* → Rs. ${b.amount}\n`;
   });
   msg +=
     `\n💰 Total: Rs. ${totalAmount}\n` +
-    `💰 Balance: Rs. ${updated[0].wallet_balance}\n\n` +
+    `💰 Balance: *Rs. ${updated[0].wallet_balance}*\n\n` +
     `Good luck! 🤞`;
+
   await send(chatId, msg, MAIN_MENU);
 }
 
@@ -578,11 +559,8 @@ async function handleBetHistoryMarkets(chatId, user) {
     callback_data: `history_${m.id}`
   }]));
   await bot.sendMessage(chatId,
-    `📜 *Select Market:*\n━━━━━━━━━━━━━━━━`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: { inline_keyboard: buttons }
-    }
+    `📜 *Select Market:*`,
+    { parse_mode: 'Markdown', reply_markup: { inline_keyboard: buttons } }
   );
 }
 
@@ -592,7 +570,7 @@ async function showBetHistory(chatId, user, market) {
     [user.id, market.id]
   );
   if (!bets.length) {
-    await send(chatId, `📜 No bets found for *${market.name}*`, MAIN_MENU);
+    await send(chatId, `📜 No bets for *${market.name}*`, MAIN_MENU);
     return;
   }
   let msg   = `📜 *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
@@ -632,13 +610,12 @@ async function handleWallet(chatId, user) {
   );
   const s = stats[0];
   await bot.sendMessage(chatId,
-    `👛 *Your Wallet*\n━━━━━━━━━━━━━━━━\n\n` +
+    `👛 *Wallet*\n━━━━━━━━━━━━━━━━\n\n` +
     `💰 Balance: *Rs. ${u.wallet_balance}*\n\n` +
-    `📊 *Stats:*\n` +
     `• Total Bets: ${s.total}\n` +
-    `• Total Wagered: Rs. ${s.bet_amount}\n` +
-    `• Total Won: Rs. ${s.won}\n` +
-    `• ✅ Wins: ${s.wins} | ❌ Losses: ${s.losses} | ⏳ Pending: ${s.pending}`,
+    `• Wagered: Rs. ${s.bet_amount}\n` +
+    `• Won: Rs. ${s.won}\n` +
+    `• ✅ ${s.wins} | ❌ ${s.losses} | ⏳ ${s.pending}`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
@@ -657,14 +634,12 @@ async function handleWallet(chatId, user) {
 async function handleTransaction(chatId, user) {
   const [deps] = await db.query(
     `SELECT 'Deposit' as type, amount, status, created_at
-     FROM deposits WHERE user_id = ?
-     ORDER BY created_at DESC LIMIT 5`,
+     FROM deposits WHERE user_id = ? ORDER BY created_at DESC LIMIT 5`,
     [user.id]
   );
   const [wds] = await db.query(
     `SELECT 'Withdrawal' as type, amount, status, created_at
-     FROM withdrawals WHERE user_id = ?
-     ORDER BY created_at DESC LIMIT 5`,
+     FROM withdrawals WHERE user_id = ? ORDER BY created_at DESC LIMIT 5`,
     [user.id]
   );
   const all = [...deps, ...wds]
@@ -674,7 +649,7 @@ async function handleTransaction(chatId, user) {
     await send(chatId, '📋 No transactions yet.', MAIN_MENU);
     return;
   }
-  let msg = `📋 *Recent Transactions*\n━━━━━━━━━━━━━━━━\n\n`;
+  let msg = `📋 *Transactions*\n━━━━━━━━━━━━━━━━\n\n`;
   all.forEach(t => {
     const icon   = t.type === 'Deposit' ? '💰' : '🏧';
     const status = (t.status === 'approved' || t.status === 'paid') ? '✅' :
@@ -693,8 +668,8 @@ async function handleAddMoney(chatId, user) {
   sessions[chatId] = { step: 'deposit_amount' };
   await send(chatId,
     `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\n` +
-    `Minimum: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
-    `Maximum: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
+    `Min: Rs. ${process.env.MIN_DEPOSIT || 100}\n` +
+    `Max: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\n` +
     `Enter amount:`
   );
 }
@@ -705,13 +680,13 @@ async function handleAddMoney(chatId, user) {
 async function handleGameRate(chatId) {
   await send(chatId,
     `📊 *Game Rates*\n━━━━━━━━━━━━━━━━\n\n` +
-    `🔢 *Open Single* → 9x\n` +
-    `🔵 *Open Pana* → 150x\n` +
-    `🟡 *Jodi* → 90x\n` +
-    `🔴 *Close Single* → 9x\n` +
-    `🟠 *Close Pana* → 300x\n` +
-    `⚫ *Triple Pana* → 1000x\n\n` +
-    `_Example: Rs.100 bet on Jodi = Rs.9,000 win_`,
+    `Open Single → *9x*\n` +
+    `Open Pana → *150x*\n` +
+    `Jodi → *90x*\n` +
+    `Close Single → *9x*\n` +
+    `Close Pana → *300x*\n` +
+    `Triple Pana → *1000x*\n\n` +
+    `_Rs.100 on Jodi = Rs.9,000 win_`,
     MAIN_MENU
   );
 }
@@ -720,16 +695,15 @@ async function handleGameRate(chatId) {
 // ❓ HELP
 // ══════════════════════════════════════════════════
 async function handleHelp(chatId) {
-  const supportNumber = process.env.SUPPORT_PHONE || '919999999999';
+  const num = process.env.SUPPORT_PHONE || '919999999999';
   await bot.sendMessage(chatId,
-    `❓ *Help & Support*\n━━━━━━━━━━━━━━━━\n\n` +
-    `For any help contact us on WhatsApp:`,
+    `❓ *Help & Support*\n━━━━━━━━━━━━━━━━\n\nContact us on WhatsApp:`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [[{
-          text: '💬 Contact Support on WhatsApp',
-          url: `https://wa.me/${supportNumber}`
+          text: '💬 WhatsApp Support',
+          url: `https://wa.me/${num}`
         }]]
       }
     }
