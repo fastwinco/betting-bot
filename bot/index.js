@@ -73,6 +73,23 @@ bot.on('callback_query', async (query) => {
     return;
   }
 
+  // Withdrawal confirm buttons
+  if (data === 'wd_yes') {
+    const session = sessions[chatId];
+    if (!session || session.step !== 'withdraw_confirm') {
+      await send(chatId, '⚠️ Session expired. Please try again.');
+      return;
+    }
+    await processWithdraw(chatId, session);
+    return;
+  }
+
+  if (data === 'wd_no') {
+    delete sessions[chatId];
+    await send(chatId, '❌ Withdrawal cancelled.', MAIN_MENU);
+    return;
+  }
+  
   // Market for Play
   if (data.startsWith('market_')) {
     const marketId = parseInt(data.replace('market_', ''));
@@ -291,7 +308,7 @@ async function handleStep(chatId, user, text, session) {
     return;
   }
 
-  // Confirm bets
+  // Confirm bets — text fallback (buttons already handle this via callback)
   if (session.step === 'play_confirm') {
     const t = text.toUpperCase();
     if (t === 'NO' || t === 'CANCEL') {
@@ -299,11 +316,22 @@ async function handleStep(chatId, user, text, session) {
       await send(chatId, '❌ Bets cancelled.', MAIN_MENU);
       return;
     }
-    if (t === 'YES' || t === 'OK' || t === 'Y') {
+    if (t === 'YES' || t === 'Y' || t === 'OK') {
       await confirmBets(chatId, user, session);
       return;
     }
-    await send(chatId, 'Send *YES* to confirm or *NO* to cancel');
+    await bot.sendMessage(chatId,
+      'Please use the buttons below to confirm or cancel:',
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ YES - Confirm', callback_data: 'bet_yes' },
+            { text: '❌ NO - Cancel',   callback_data: 'bet_no'  }
+          ]]
+        }
+      }
+    );
     return;
   }
 
@@ -334,7 +362,10 @@ async function handleStep(chatId, user, text, session) {
       {
         parse_mode: 'Markdown',
         reply_markup: {
-          inline_keyboard: [[{ text: `💳 Pay Rs. ${amount}`, url: upiLink }]]
+          inline_keyboard: [[{
+            text: `💳 Pay Rs. ${amount}`,
+            url: upiLink
+          }]]
         }
       }
     );
@@ -378,16 +409,24 @@ async function handleStep(chatId, user, text, session) {
       return;
     }
     sessions[chatId] = { step: 'withdraw_confirm', amount };
-    await send(chatId,
+    await bot.sendMessage(chatId,
       `📋 *Confirm Withdrawal*\n━━━━━━━━━━━━━━━━\n\n` +
       `💰 Amount: *Rs. ${amount}*\n` +
-      `📱 UPI: *${freshUser.upi_id}*\n\n` +
-      `Send *YES* to confirm or *NO* to cancel`
+      `📱 UPI: *${freshUser.upi_id}*`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ YES - Confirm', callback_data: 'wd_yes' },
+            { text: '❌ NO - Cancel',   callback_data: 'wd_no'  }
+          ]]
+        }
+      }
     );
     return;
   }
 
-  // Withdraw confirm
+  // Withdraw confirm text fallback
   if (session.step === 'withdraw_confirm') {
     const t = text.toUpperCase();
     if (t === 'NO' || t === 'CANCEL') {
@@ -395,41 +434,48 @@ async function handleStep(chatId, user, text, session) {
       await send(chatId, '❌ Withdrawal cancelled.', MAIN_MENU);
       return;
     }
-    if (t !== 'YES' && t !== 'Y') {
-      await send(chatId, 'Send *YES* or *NO*');
+    if (t === 'YES' || t === 'Y') {
+      await processWithdraw(chatId, session);
       return;
     }
-    const freshUser = await getUser(String(chatId));
-    await db.query(
-      'UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?',
-      [session.amount, freshUser.id]
-    );
-    await db.query(
-      `INSERT INTO withdrawals (user_id, amount, upi_id, status, created_at)
-       VALUES (?, ?, ?, 'pending', NOW())`,
-      [freshUser.id, session.amount, freshUser.upi_id]
-    );
-    delete sessions[chatId];
-    await send(chatId,
-      `✅ *Withdrawal Submitted!*\n━━━━━━━━━━━━━━━━\n\n` +
-      `💰 Amount: *Rs. ${session.amount}*\n` +
-      `📱 UPI: *${freshUser.upi_id}*\n` +
-      `🕐 Processing: 1-4 hours\n\n` +
-      `You will be notified when paid! 🔔`,
-      MAIN_MENU
-    );
-    try {
-      const adminId = process.env.ADMIN_TELEGRAM_ID;
-      if (adminId) {
-        await bot.sendMessage(adminId,
-          `🔔 *New Withdrawal!*\n\n` +
-          `👤 ${freshUser.name}\n` +
-          `📱 ${freshUser.upi_id}\n` +
-          `💰 Rs. ${session.amount}\n\nCheck admin panel!`,
-          { parse_mode: 'Markdown' }
-        );
-      }
-    } catch (e) {}
+    await send(chatId, 'Please use the buttons to confirm.');
+    return;
+  }
+}
+
+async function processWithdraw(chatId, session) {
+  const freshUser = await getUser(String(chatId));
+  await db.query(
+    'UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?',
+    [session.amount, freshUser.id]
+  );
+  await db.query(
+    `INSERT INTO withdrawals (user_id, amount, upi_id, status, created_at)
+     VALUES (?, ?, ?, 'pending', NOW())`,
+    [freshUser.id, session.amount, freshUser.upi_id]
+  );
+  delete sessions[chatId];
+  await send(chatId,
+    `✅ *Withdrawal Submitted!*\n━━━━━━━━━━━━━━━━\n\n` +
+    `💰 Amount: *Rs. ${session.amount}*\n` +
+    `📱 UPI: *${freshUser.upi_id}*\n` +
+    `🕐 Processing: 1-4 hours\n\n` +
+    `You will be notified when paid! 🔔`,
+    MAIN_MENU
+  );
+  try {
+    const adminId = process.env.ADMIN_TELEGRAM_ID;
+    if (adminId) {
+      await bot.sendMessage(adminId,
+        `🔔 *New Withdrawal!*\n\n` +
+        `👤 ${freshUser.name}\n` +
+        `📱 ${freshUser.upi_id}\n` +
+        `💰 Rs. ${session.amount}\n\nCheck admin panel!`,
+        { parse_mode: 'Markdown' }
+      );
+    }
+  } catch (e) {}
+}
     return;
   }
 }
