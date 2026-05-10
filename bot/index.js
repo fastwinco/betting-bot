@@ -332,39 +332,63 @@ async function handleStep(chatId, user, text, session) {
 
   // Deposit amount
   if (session.step === 'deposit_amount') {
-    const amount = parseFloat(text);
-    const MIN    = parseFloat(process.env.MIN_DEPOSIT || 100);
-    const MAX    = parseFloat(process.env.MAX_DEPOSIT || 50000);
-    if (isNaN(amount) || amount < MIN || amount > MAX) {
-      await send(chatId, `❌ Amount must be between Rs. ${MIN} and Rs. ${MAX}`);
-      return;
-    }
-    await db.query(
-      `INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, ?, 'pending', NOW())`,
-      [user.id, amount]
-    );
-    const adminUPI  = process.env.ADMIN_UPI  || 'admin@upi';
-    const adminName = process.env.ADMIN_NAME || 'FastWin';
-    const upiLink   = `upi://pay?pa=${adminUPI}&pn=${encodeURIComponent(adminName)}&am=${amount}&cu=INR`;
-    sessions[chatId] = { step: 'awaiting_screenshot', depositAmount: amount };
-    await bot.sendMessage(chatId,
-      `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
-      `📱 UPI: \`${adminUPI}\`\n` +
-      `👤 Name: *${adminName}*\n` +
-      `💰 Amount: *Rs. ${amount}*\n\n` +
-      `After payment send *screenshot* here.\n` +
-      `⏳ Valid 30 minutes.`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[{
-            text: `💳 Pay Rs. ${amount}`,
-            url: upiLink
-          }]]
-        }
-      }
-    );
+  const amount = parseFloat(text);
+  const MIN    = parseFloat(process.env.MIN_DEPOSIT || 100);
+  const MAX    = parseFloat(process.env.MAX_DEPOSIT || 50000);
+  if (isNaN(amount) || amount < MIN || amount > MAX) {
+    await send(chatId, `❌ Amount must be between Rs. ${MIN} and Rs. ${MAX}`);
     return;
+  }
+
+  await db.query(
+    `INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, ?, 'pending', NOW())`,
+    [user.id, amount]
+  );
+
+  // Get all active payment methods
+  const [methods] = await db.query(
+    `SELECT * FROM payment_methods WHERE is_active = 1`
+  );
+
+  sessions[chatId] = { step: 'awaiting_screenshot', depositAmount: amount };
+
+  // Build payment options
+  const upiMethods  = methods.filter(m => m.type === 'upi');
+  const bankMethods = methods.filter(m => m.type === 'bank');
+
+  let msg =
+    `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
+    `Choose payment method:\n\n`;
+
+  const buttons = [];
+
+  if (upiMethods.length) {
+    msg += `📱 *UPI Options:*\n`;
+    upiMethods.forEach(m => {
+      msg += `• \`${m.value}\` (${m.name})\n`;
+      buttons.push([{
+        text: `📱 Pay via UPI — ${m.value}`,
+        url: `upi://pay?pa=${m.value}&pn=${encodeURIComponent(m.name)}&am=${amount}&cu=INR`
+      }]);
+    });
+    msg += '\n';
+  }
+
+  if (bankMethods.length) {
+    msg += `🏦 *Bank Transfer:*\n`;
+    bankMethods.forEach(m => {
+      msg += `• *${m.value}*\n  ${m.extra}\n`;
+    });
+    msg += '\n';
+  }
+
+  msg += `After payment send *screenshot* here.\n⏳ Valid 30 minutes.`;
+
+  await bot.sendMessage(chatId, msg, {
+    parse_mode: 'Markdown',
+    reply_markup: { inline_keyboard: buttons }
+  });
+  return;
   }
 
   // Manual UTR
