@@ -400,5 +400,39 @@ function digitSum(p) {
   if (!p) return '0';
   return String(p.split('').reduce((a,b) => a + parseInt(b), 0) % 10);
 }
+// ── PAYMENT METHODS ───────────────────────────────
+router.get('/payments', authCheck, async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM payment_methods ORDER BY type, created_at');
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
+router.post('/payments', authCheck, async (req, res) => {
+  try {
+    const { type, name, value, extra } = req.body;
+    await db.query(
+      'INSERT INTO payment_methods (type, name, value, extra, is_active, created_at) VALUES (?, ?, ?, ?, 1, NOW())',
+      [type, name, value, extra || null]
+    );
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/payments/:id/toggle', authCheck, async (req, res) => {
+  try {
+    await db.query(
+      'UPDATE payment_methods SET is_active = 1 - is_active WHERE id = ?',
+      [req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/payments/:id', authCheck, async (req, res) => {
+  try {
+    await db.query('DELETE FROM payment_methods WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 module.exports = router;
