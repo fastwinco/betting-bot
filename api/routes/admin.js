@@ -156,6 +156,20 @@ router.post('/withdrawals/:id/pay', authCheck, async (req, res) => {
         });
       }
     } catch (e) {}
+// Telegram notification
+try {
+  const { bot } = require('../../bot/index');
+  if (bot) {
+    await bot.sendMessage(wds[0].whatsapp_number,
+      `✅ *Withdrawal Paid!*\n━━━━━━━━━━━━━━━━\n\n` +
+      `💰 Amount: *Rs. ${wds[0].amount}*\n` +
+      `📱 UPI: ${wds[0].upi_id}\n` +
+      `🔢 UTR: ${utr}\n\n` +
+      `Payment received? Contact support if not.`,
+      { parse_mode: 'Markdown' }
+    );
+  }
+} catch(e) { console.error('Notify error:', e.message); }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
