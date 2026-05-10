@@ -90,7 +90,7 @@ bot.on('callback_query', async (query) => {
     sessions[chatId] = { step: 'play_enter_bets', market };
     const statusText = isClose ? '🟡 Close Betting Open' : '🟢 Open Betting';
     await send(chatId,
-      `✅ *${market.name}*\n━━━━━━━━━━━━━━━━\n` +
+      `✅ *${market.name}*\n━━━━━━━━━━━━━━━━\n\n` +
       `${statusText}\n\nEnter bets:`
     );
     return;
