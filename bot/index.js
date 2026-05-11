@@ -341,35 +341,28 @@ async function handleStep(chatId, user, text, session) {
   }
 
   await db.query(
-    `INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, ?, 'pending', NOW())`,
+    `INSERT INTO deposits (user_id, amount, status, created_at)
+     VALUES (?, ?, 'pending', NOW())`,
     [user.id, amount]
   );
 
-  // Get all active payment methods
+  // Get active payment methods
   const [methods] = await db.query(
-    `SELECT * FROM payment_methods WHERE is_active = 1`
+    `SELECT * FROM payment_methods WHERE is_active = 1 ORDER BY type`
   );
 
   sessions[chatId] = { step: 'awaiting_screenshot', depositAmount: amount };
 
-  // Build payment options
   const upiMethods  = methods.filter(m => m.type === 'upi');
   const bankMethods = methods.filter(m => m.type === 'bank');
 
   let msg =
-    `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
-    `Choose payment method:\n\n`;
-
-  const buttons = [];
+    `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n`;
 
   if (upiMethods.length) {
-    msg += `📱 *UPI Options:*\n`;
+    msg += `📱 *UPI:*\n`;
     upiMethods.forEach(m => {
-      msg += `• \`${m.value}\` (${m.name})\n`;
-      buttons.push([{
-        text: `📱 Pay via UPI — ${m.value}`,
-        url: `upi://pay?pa=${m.value}&pn=${encodeURIComponent(m.name)}&am=${amount}&cu=INR`
-      }]);
+      msg += `• \`${m.value}\` — ${m.name}\n`;
     });
     msg += '\n';
   }
@@ -377,19 +370,26 @@ async function handleStep(chatId, user, text, session) {
   if (bankMethods.length) {
     msg += `🏦 *Bank Transfer:*\n`;
     bankMethods.forEach(m => {
-      msg += `• *${m.value}*\n  ${m.extra}\n`;
+      msg += `• *${m.name}*\n`;
+      msg += `  ${m.extra}\n`;
+      msg += `  Holder: ${m.value}\n\n`;
     });
-    msg += '\n';
   }
 
   msg += `After payment send *screenshot* here.\n⏳ Valid 30 minutes.`;
 
+  // UPI pay buttons
+  const buttons = upiMethods.map(m => ([{
+    text: `💳 Pay via ${m.name}`,
+    url: `upi://pay?pa=${m.value}&pn=${encodeURIComponent(m.name)}&am=${amount}&cu=INR`
+  }]));
+
   await bot.sendMessage(chatId, msg, {
     parse_mode: 'Markdown',
-    reply_markup: { inline_keyboard: buttons }
+    reply_markup: buttons.length ? { inline_keyboard: buttons } : { remove_keyboard: true }
   });
   return;
-  }
+}
 
   // Manual UTR
   if (session.step === 'manual_utr') {
