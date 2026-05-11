@@ -744,15 +744,34 @@ async function handleAddMoney(chatId, user) {
 // 📊 GAME RATE
 // ══════════════════════════════════════════════════
 async function handleGameRate(chatId) {
+  // Get rates from DB or localStorage fallback
+  let rates = {
+    open_single: 9,
+    open_pana: 150,
+    jodi: 90,
+    close_single: 9,
+    close_pana: 300,
+    triple_pana: 1000
+  };
+
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM game_rates LIMIT 1`
+    );
+    if (rows.length) rates = { ...rates, ...rows[0] };
+  } catch(e) {
+    // Table nahi hai to default use karo
+  }
+
   await send(chatId,
     `📊 *Game Rates*\n━━━━━━━━━━━━━━━━\n\n` +
-    `Open Single → *9x*\n` +
-    `Open Pana → *150x*\n` +
-    `Jodi → *90x*\n` +
-    `Close Single → *9x*\n` +
-    `Close Pana → *300x*\n` +
-    `Triple Pana → *1000x*\n\n` +
-    `_Rs.100 on Jodi = Rs.9,000 win_`,
+    `Open Single → *${rates.open_single}x*\n` +
+    `Open Pana → *${rates.open_pana}x*\n` +
+    `Jodi → *${rates.jodi}x*\n` +
+    `Close Single → *${rates.close_single}x*\n` +
+    `Close Pana → *${rates.close_pana}x*\n` +
+    `Triple Pana → *${rates.triple_pana}x*\n\n` +
+    `_Rs.100 on Jodi = Rs.${rates.jodi * 100} win_`,
     MAIN_MENU
   );
 }
