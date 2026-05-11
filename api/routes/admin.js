@@ -403,7 +403,9 @@ function digitSum(p) {
 // ── PAYMENT METHODS ───────────────────────────────
 router.get('/payments', authCheck, async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM payment_methods ORDER BY type, created_at');
+    const [rows] = await db.query(
+      'SELECT * FROM payment_methods ORDER BY type, created_at'
+    );
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -412,7 +414,8 @@ router.post('/payments', authCheck, async (req, res) => {
   try {
     const { type, name, value, extra } = req.body;
     await db.query(
-      'INSERT INTO payment_methods (type, name, value, extra, is_active, created_at) VALUES (?, ?, ?, ?, 1, NOW())',
+      `INSERT INTO payment_methods (type, name, value, extra, is_active, created_at)
+       VALUES (?, ?, ?, ?, 1, NOW())`,
       [type, name, value, extra || null]
     );
     res.json({ success: true });
@@ -431,8 +434,28 @@ router.post('/payments/:id/toggle', authCheck, async (req, res) => {
 
 router.delete('/payments/:id', authCheck, async (req, res) => {
   try {
-    await db.query('DELETE FROM payment_methods WHERE id = ?', [req.params.id]);
+    await db.query(
+      'DELETE FROM payment_methods WHERE id = ?',
+      [req.params.id]
+    );
     res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── BETS BY MARKET ────────────────────────────────
+router.get('/bets/by-market/:id', authCheck, async (req, res) => {
+  try {
+    const [bets] = await db.query(
+      `SELECT bet_type, number,
+       SUM(amount) as total_amount,
+       COUNT(*) as count
+       FROM bets
+       WHERE market_id = ? AND status != 'cancelled'
+       GROUP BY bet_type, number
+       ORDER BY bet_type, number ASC`,
+      [req.params.id]
+    );
+    res.json(bets);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 module.exports = router;
