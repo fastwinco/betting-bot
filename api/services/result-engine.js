@@ -4,7 +4,6 @@ require('dotenv').config();
 async function declareResult(marketId, resultData) {
   const { single, jodi, openPana, closePana } = resultData;
 
-  // Get all pending bets
   const [bets] = await db.query(
     `SELECT b.*, u.whatsapp_number
      FROM bets b JOIN users u ON b.user_id = u.id
@@ -15,20 +14,19 @@ async function declareResult(marketId, resultData) {
   let totalWinners = 0;
   let totalPayout  = 0;
 
-  // Get bot instance
   let bot = null;
   try {
     const botModule = require('../../bot/index');
     bot = botModule.bot;
   } catch (e) {}
 
+  // ── Process each bet ──────────────────────────
   for (const bet of bets) {
     const isWin = checkWin(bet, { single, jodi, openPana, closePana });
 
     if (isWin) {
       const winAmount = bet.possible_win;
 
-      // Credit wallet
       await db.query(
         `UPDATE users SET
           wallet_balance = wallet_balance + ?,
@@ -37,39 +35,34 @@ async function declareResult(marketId, resultData) {
         [winAmount, winAmount, bet.user_id]
       );
 
-      // Update bet
       await db.query(
         `UPDATE bets SET status = 'won', actual_win = ? WHERE id = ?`,
         [winAmount, bet.id]
       );
 
-      // Transaction record
       await db.query(
         `INSERT INTO transactions (user_id, type, amount, note, created_at)
          VALUES (?, 'win', ?, ?, NOW())`,
         [bet.user_id, winAmount, `Win: ${bet.bet_type} - ${bet.number}`]
       );
 
-      // Get new balance
       const [updated] = await db.query(
         'SELECT wallet_balance FROM users WHERE id = ?',
         [bet.user_id]
       );
 
-      // Notify winner on Telegram
+      // ✅ Only notify WINNERS
       if (bot && bet.whatsapp_number) {
         try {
           await bot.sendMessage(bet.whatsapp_number,
-            `🏆 *YOU WON!*\n` +
-            `━━━━━━━━━━━━━━━━\n\n` +
+            `🏆 *YOU WON!*\n━━━━━━━━━━━━━━━━\n\n` +
             `🎮 ${bet.bet_type.replace(/_/g,' ').toUpperCase()}: *${bet.number}*\n` +
             `💰 Bet: Rs. ${bet.amount}\n` +
             `🎉 Won: *Rs. ${winAmount}*\n\n` +
-            `💰 New Balance: *Rs. ${updated[0].wallet_balance}*\n\n` +
-            `Keep playing! 🎯`,
+            `👛 Balance: *Rs. ${updated[0].wallet_balance}*`,
             { parse_mode: 'Markdown' }
           );
-          await new Promise(r => setTimeout(r, 150));
+          await new Promise(r => setTimeout(r, 200));
         } catch (e) {}
       }
 
@@ -77,55 +70,44 @@ async function declareResult(marketId, resultData) {
       totalPayout += parseFloat(winAmount);
 
     } else {
-      // Update bet as lost
+      // Just update status — NO notification
       await db.query(
         `UPDATE bets SET status = 'lost' WHERE id = ?`,
         [bet.id]
       );
-
-      // Notify loser on Telegram
-      if (bot && bet.whatsapp_number) {
-        try {
-          await bot.sendMessage(bet.whatsapp_number,
-            `😞 *Result Declared*\n` +
-            `━━━━━━━━━━━━━━━━\n\n` +
-            `🎮 ${bet.bet_type.replace(/_/g,' ').toUpperCase()}: *${bet.number}*\n` +
-            `Result: *${jodi || single}*\n\n` +
-            `Better luck next time! 🤞\n` +
-            `Place your next bet! 🎯`,
-            { parse_mode: 'Markdown' }
-          );
-          await new Promise(r => setTimeout(r, 150));
-        } catch (e) {}
-      }
     }
   }
 
-  // Broadcast result to all active users
+  // ── Broadcast result to ALL users (one message) ──
   if (bot) {
     try {
       const [market] = await db.query(
         'SELECT * FROM markets WHERE id = ?', [marketId]
       );
       const [allUsers] = await db.query(
-        `SELECT whatsapp_number FROM users WHERE status = 'active'`
+        `SELECT DISTINCT whatsapp_number FROM users WHERE status = 'active'`
       );
 
+      const openAnk  = single || '—';
+      const closeAnk = closePana
+        ? String(closePana.split('').reduce((a,b) => a+parseInt(b), 0) % 10)
+        : '—';
+
       const msg =
-        `🎲 *RESULT DECLARED!*\n` +
-        `━━━━━━━━━━━━━━━━\n\n` +
-        `🏪 *${market[0].name}*\n\n` +
+        `🎲 *${market[0].name} — Result*\n━━━━━━━━━━━━━━━━\n\n` +
         `*OPEN*\n` +
-        `Pana: *${openPana || '—'}* | Ank: *${single || '—'}*\n\n` +
+        `Pana: *${openPana || '—'}*  Ank: *${openAnk}*\n\n` +
         `*JODI: ${jodi || '—'}*\n\n` +
-        `*CLOSE*\n` +
-        `Pana: *${closePana || '—'}*\n\n` +
-        `_Place your next bet!_ 🎯`;
+        (closePana
+          ? `*CLOSE*\nPana: *${closePana}*  Ank: *${closeAnk}*\n\n`
+          : ''
+        ) +
+        `🎯 Place your next bet!`;
 
       for (const u of allUsers) {
         try {
           await bot.sendMessage(u.whatsapp_number, msg, { parse_mode: 'Markdown' });
-          await new Promise(r => setTimeout(r, 150));
+          await new Promise(r => setTimeout(r, 200));
         } catch (e) {}
       }
     } catch (e) {
@@ -133,7 +115,7 @@ async function declareResult(marketId, resultData) {
     }
   }
 
-  console.log(`✅ Result declared. Winners: ${totalWinners}, Payout: Rs.${totalPayout}`);
+  console.log(`✅ Result done. Winners: ${totalWinners}, Payout: Rs.${totalPayout}`);
   return { totalWinners, totalPayout, totalBets: bets.length };
 }
 
@@ -146,7 +128,9 @@ function checkWin(bet, result) {
 
     case 'close_single':
       if (!closePana) return false;
-      const closeAnk = String(closePana.split('').reduce((a,b) => a + parseInt(b), 0) % 10);
+      const closeAnk = String(
+        closePana.split('').reduce((a,b) => a+parseInt(b), 0) % 10
+      );
       return closeAnk === bet.number;
 
     case 'jodi':
