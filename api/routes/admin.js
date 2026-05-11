@@ -458,4 +458,25 @@ router.get('/bets/by-market/:id', authCheck, async (req, res) => {
     res.json(bets);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+router.post('/rates', authCheck, async (req, res) => {
+  try {
+    const { open_single, open_pana, jodi, close_single, close_pana, triple_pana } = req.body;
+    await db.query(
+      `UPDATE game_rates SET
+        open_single  = ?,
+        open_pana    = ?,
+        jodi         = ?,
+        close_single = ?,
+        close_pana   = ?,
+        triple_pana  = ?,
+        updated_at   = NOW()
+       WHERE id = 1`,
+      [open_single, open_pana, jodi, close_single, close_pana, triple_pana]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = router;
