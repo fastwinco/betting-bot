@@ -36,7 +36,7 @@ const MAIN_MENU = {
       [{ text: '🎮 Play' },      { text: '📜 Bet History' }],
       [{ text: '👛 Wallet' },    { text: '📋 Transaction' }],
       [{ text: '➕ Add Money' }, { text: '📊 Game Rate'   }],
-      [{ text: '❓ Help' }],
+      [{ text: '⚙️ Settings' }, { text: '❓ Help'         }],
     ],
     resize_keyboard: true,
     one_time_keyboard: false,
@@ -175,6 +175,31 @@ bot.on('callback_query', async (query) => {
     await send(chatId, '❌ Withdrawal cancelled.', MAIN_MENU);
     return;
   }
+
+  // ── SETTINGS ───────────────────────────────────
+  if (data === 'set_name') {
+    sessions[chatId] = { step: 'update_name' };
+    await send(chatId,
+      `👤 *Change Name*\n\nEnter your new name:`
+    );
+    return;
+  }
+
+  if (data === 'set_upi') {
+    sessions[chatId] = { step: 'update_upi' };
+    await send(chatId,
+      `📱 *Update UPI ID*\n\nEnter your new UPI ID:\n_Example: name@ybl_`
+    );
+    return;
+  }
+
+  if (data === 'set_bank') {
+    sessions[chatId] = { step: 'update_bank_ac' };
+    await send(chatId,
+      `🏦 *Update Bank Account*\n\nEnter your *Account Number*:`
+    );
+    return;
+  }
 });
 
 // ── MESSAGE HANDLER ──────────────────────────────
@@ -267,6 +292,7 @@ bot.on('message', async (msg) => {
     case '📋 Transaction': await handleTransaction(chatId, user);       break;
     case '➕ Add Money':   await handleAddMoney(chatId, user);          break;
     case '📊 Game Rate':   await handleGameRate(chatId);                break;
+    case '⚙️ Settings': await handleSettings(chatId, user);             break;
     case '❓ Help':        await handleHelp(chatId);                    break;
     default:
       if (session) await handleStep(chatId, user, text, session);
@@ -522,6 +548,94 @@ async function handleStep(chatId, user, text, session) {
     return;
   }
 }
+
+// ── UPDATE NAME ────────────────────────────────
+  if (session.step === 'update_name') {
+    const name = text.trim();
+    if (name.length < 2) {
+      await send(chatId, '❌ Name too short. Enter valid name:');
+      return;
+    }
+    await db.query(
+      'UPDATE users SET name = ? WHERE whatsapp_number = ?',
+      [name, String(chatId)]
+    );
+    delete sessions[chatId];
+    await send(chatId,
+      `✅ *Name Updated!*\n\nNew Name: *${name}*`,
+      MAIN_MENU
+    );
+    return;
+  }
+
+  // ── UPDATE UPI ─────────────────────────────────
+  if (session.step === 'update_upi') {
+    const upi = text.trim().toLowerCase();
+    if (!upi.includes('@')) {
+      await send(chatId, '❌ Invalid UPI ID.\nExample: name@ybl');
+      return;
+    }
+    await db.query(
+      'UPDATE users SET upi_id = ? WHERE whatsapp_number = ?',
+      [upi, String(chatId)]
+    );
+    delete sessions[chatId];
+    await send(chatId,
+      `✅ *UPI Updated!*\n\nNew UPI: *${upi}*`,
+      MAIN_MENU
+    );
+    return;
+  }
+
+  // ── UPDATE BANK — Step 1: Account Number ───────
+  if (session.step === 'update_bank_ac') {
+    if (!/^\d{9,18}$/.test(text.trim())) {
+      await send(chatId, '❌ Invalid account number.\nEnter valid account number:');
+      return;
+    }
+    sessions[chatId] = { step: 'update_bank_ifsc', ac: text.trim() };
+    await send(chatId,
+      `✅ Account: *${text.trim()}*\n\nEnter *IFSC Code*:\n_Example: HDFC0001234_`
+    );
+    return;
+  }
+
+  // ── UPDATE BANK — Step 2: IFSC ─────────────────
+  if (session.step === 'update_bank_ifsc') {
+    const ifsc = text.trim().toUpperCase();
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+      await send(chatId, '❌ Invalid IFSC code.\nExample: HDFC0001234');
+      return;
+    }
+    sessions[chatId] = { ...session, step: 'update_bank_name', ifsc };
+    await send(chatId,
+      `✅ IFSC: *${ifsc}*\n\nEnter *Bank Name*:\n_Example: HDFC Bank_`
+    );
+    return;
+  }
+
+  // ── UPDATE BANK — Step 3: Bank Name ────────────
+  if (session.step === 'update_bank_name') {
+    const bankName = text.trim();
+    if (bankName.length < 2) {
+      await send(chatId, '❌ Enter valid bank name:');
+      return;
+    }
+    const bankInfo = `${bankName}|${session.ac}|${session.ifsc}`;
+    await db.query(
+      'UPDATE users SET upi_id = ? WHERE whatsapp_number = ?',
+      [bankInfo, String(chatId)]
+    );
+    delete sessions[chatId];
+    await send(chatId,
+      `✅ *Bank Account Updated!*\n━━━━━━━━━━━━━━━━\n\n` +
+      `🏦 Bank: *${bankName}*\n` +
+      `💳 AC: *${session.ac}*\n` +
+      `📋 IFSC: *${session.ifsc}*`,
+      MAIN_MENU
+    );
+    return;
+  }
 
 // ══════════════════════════════════════════════════
 // PROCESS WITHDRAW
@@ -860,6 +974,29 @@ async function handleHelp(chatId) {
           text: '💬 WhatsApp Support',
           url: `https://wa.me/${num}`
         }]]
+      }
+    }
+  );
+}
+
+// ══════════════════════════════════════════════════
+// ⚙️ SETTINGS
+// ══════════════════════════════════════════════════
+async function handleSettings(chatId, user) {
+  const freshUser = await getUser(String(chatId));
+  await bot.sendMessage(chatId,
+    `⚙️ *Settings*\n━━━━━━━━━━━━━━━━\n\n` +
+    `👤 Name: *${freshUser.name}*\n` +
+    `💳 UPI: *${freshUser.upi_id || '—'}*\n\n` +
+    `What would you like to update?`,
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '👤 Change Name',        callback_data: 'set_name' }],
+          [{ text: '📱 Update UPI ID',       callback_data: 'set_upi'  }],
+          [{ text: '🏦 Update Bank Account', callback_data: 'set_bank' }],
+        ]
       }
     }
   );
