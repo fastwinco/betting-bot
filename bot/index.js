@@ -331,7 +331,7 @@ async function handleStep(chatId, user, text, session) {
   }
 
   // Deposit amount
-  if (session.step === 'deposit_amount') {
+if (session.step === 'deposit_amount') {
   const amount = parseFloat(text);
   const MIN    = parseFloat(process.env.MIN_DEPOSIT || 100);
   const MAX    = parseFloat(process.env.MAX_DEPOSIT || 50000);
@@ -346,66 +346,131 @@ async function handleStep(chatId, user, text, session) {
     [user.id, amount]
   );
 
-  // Get active payment methods
-  const [methods] = await db.query(
-    `SELECT * FROM payment_methods WHERE is_active = 1 ORDER BY type`
+  // Get active UPI
+  let adminUPI  = process.env.ADMIN_UPI  || 'admin@upi';
+  let adminName = process.env.ADMIN_NAME || 'FastWin';
+  try {
+    const [methods] = await db.query(
+      `SELECT * FROM payment_methods WHERE is_active=1 AND type='upi' LIMIT 1`
+    );
+    if (methods.length) {
+      adminUPI  = methods[0].value;
+      adminName = methods[0].name;
+    }
+  } catch(e) {}
+
+  // UPI deep link — opens all installed UPI apps
+  const upiLink = `upi://pay?pa=${adminUPI}&pn=${encodeURIComponent(adminName)}&am=${amount}&cu=INR&tn=FastWin Deposit`;
+
+  sessions[chatId] = { step: 'await_utr', depositAmount: amount };
+
+  await bot.sendMessage(chatId,
+    `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
+    `👆 Click button below to pay\n` +
+    `_(Opens all UPI apps — GPay, PhonePe, Paytm etc.)_\n\n` +
+    `📱 UPI: \`${adminUPI}\`\n` +
+    `💰 Amount: *Rs. ${amount}*\n\n` +
+    `━━━━━━━━━━━━━━━━\n` +
+    `After payment enter *UTR number*:`,
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[{
+          text: `💳 Pay Rs. ${amount} via UPI`,
+          url: upiLink
+        }]]
+      }
+    }
   );
-
-  sessions[chatId] = { step: 'awaiting_screenshot', depositAmount: amount };
-
-  const upiMethods  = methods.filter(m => m.type === 'upi');
-  const bankMethods = methods.filter(m => m.type === 'bank');
-
-  let msg =
-    `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n`;
-
-  if (upiMethods.length) {
-    msg += `📱 *UPI:*\n`;
-    upiMethods.forEach(m => {
-      msg += `• \`${m.value}\` — ${m.name}\n`;
-    });
-    msg += '\n';
-  }
-
-  if (bankMethods.length) {
-    msg += `🏦 *Bank Transfer:*\n`;
-    bankMethods.forEach(m => {
-      msg += `• *${m.name}*\n`;
-      msg += `  ${m.extra}\n`;
-      msg += `  Holder: ${m.value}\n\n`;
-    });
-  }
-
-  msg += `After payment send *screenshot* here.\n⏳ Valid 30 minutes.`;
-
-  // UPI pay buttons
-  const buttons = upiMethods.map(m => ([{
-    text: `💳 Pay via ${m.name}`,
-    url: `upi://pay?pa=${m.value}&pn=${encodeURIComponent(m.name)}&am=${amount}&cu=INR`
-  }]));
-
-  await bot.sendMessage(chatId, msg, {
-    parse_mode: 'Markdown',
-    reply_markup: buttons.length ? { inline_keyboard: buttons } : { remove_keyboard: true }
-  });
   return;
 }
 
-  // Manual UTR
-  if (session.step === 'manual_utr') {
-    const utr = text.trim().toUpperCase();
-    if (utr.length < 10) {
-      await send(chatId, '❌ Invalid UTR. Please enter correct UTR number.');
-      return;
-    }
-    const { verifyAndCredit } = require('../api/services/verification');
-    await verifyAndCredit(
-      { utr, amount: session.depositAmount },
-      'manual', String(chatId), bot, 'telegram'
+// UTR submit
+if (session.step === 'await_utr') {
+  const utr = text.trim().replace(/\s+/g,'').toUpperCase();
+  if (utr.length < 10) {
+    await send(chatId,
+      `❌ Invalid UTR number.\n\n` +
+      `UTR is 12 digits found in payment app.\n` +
+      `Please enter correct UTR:`
     );
-    delete sessions[chatId];
     return;
   }
+
+  await send(chatId,
+    `🔍 *Verifying payment...*\n\n` +
+    `UTR: \`${utr}\`\n` +
+    `Amount: Rs. ${session.depositAmount}\n\n` +
+    `_Please wait..._`
+  );
+
+  // Check duplicate UTR
+  const [existing] = await db.query(
+    'SELECT id FROM transactions WHERE utr_number = ?', [utr]
+  );
+
+  if (existing.length) {
+    await send(chatId,
+      `❌ *This UTR is already used!*\n\n` +
+      `If you made a new payment, please enter the correct UTR.\n` +
+      `Contact support if issue persists.`
+    );
+    return;
+  }
+
+  // Credit wallet
+  await db.query(
+    'UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?',
+    [session.depositAmount, user.id]
+  );
+
+  // Transaction record
+  await db.query(
+    `INSERT INTO transactions
+      (user_id, type, amount, utr_number, status, source, created_at)
+     VALUES (?, 'deposit', ?, ?, 'approved', 'utr', NOW())`,
+    [user.id, session.depositAmount, utr]
+  );
+
+  // Update deposit status
+  await db.query(
+    `UPDATE deposits SET status='approved', utr_number=?, approved_at=NOW()
+     WHERE user_id=? AND amount=? AND status='pending'
+     ORDER BY created_at DESC LIMIT 1`,
+    [utr, user.id, session.depositAmount]
+  );
+
+  const [updated] = await db.query(
+    'SELECT wallet_balance FROM users WHERE id=?', [user.id]
+  );
+
+  delete sessions[chatId];
+
+  await send(chatId,
+    `✅ *Payment Successful!*\n━━━━━━━━━━━━━━━━\n\n` +
+    `💰 Amount Added: *Rs. ${session.depositAmount}*\n` +
+    `🔢 UTR: \`${utr}\`\n` +
+    `👛 New Balance: *Rs. ${updated[0].wallet_balance}*\n\n` +
+    `Place your bet now! 🎯`,
+    MAIN_MENU
+  );
+
+  // Admin notify
+  try {
+    const adminId = process.env.ADMIN_TELEGRAM_ID;
+    if (adminId) {
+      await bot.sendMessage(adminId,
+        `💰 *New Deposit!*\n\n` +
+        `👤 ${user.name}\n` +
+        `💰 Rs. ${session.depositAmount}\n` +
+        `🔢 UTR: ${utr}\n` +
+        `✅ Auto approved`,
+        { parse_mode: 'Markdown' }
+      );
+    }
+  } catch(e) {}
+  return;
+}
 
   // Withdraw amount
   if (session.step === 'withdraw_amount') {
