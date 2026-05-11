@@ -980,6 +980,346 @@ async function handleHelp(chatId) {
 }
 
 // ══════════════════════════════════════════════════
+// STEP HANDLER
+// ══════════════════════════════════════════════════
+async function handleStep(chatId, user, text, session) {
+
+  if (session.step === 'play_enter_bets') {
+    await processBets(chatId, user, text, session.market);
+    return;
+  }
+
+  if (session.step === 'play_confirm') {
+    const t = text.toUpperCase();
+    if (t === 'NO' || t === 'CANCEL') {
+      delete sessions[chatId];
+      await send(chatId, '❌ Bets cancelled.', MAIN_MENU);
+      return;
+    }
+    if (t === 'YES' || t === 'Y') {
+      await confirmBets(chatId, user, session);
+      return;
+    }
+    await bot.sendMessage(chatId, 'Please use the buttons below:', {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '✅ YES - Confirm', callback_data: 'bet_yes' },
+          { text: '❌ NO - Cancel',   callback_data: 'bet_no'  }
+        ]]
+      }
+    });
+    return;
+  }
+
+  if (session.step === 'deposit_amount') {
+    const amount = parseFloat(text);
+    const MIN    = parseFloat(process.env.MIN_DEPOSIT || 100);
+    const MAX    = parseFloat(process.env.MAX_DEPOSIT || 50000);
+    if (isNaN(amount) || amount < MIN || amount > MAX) {
+      await send(chatId, `❌ Amount must be between Rs. ${MIN} and Rs. ${MAX}`);
+      return;
+    }
+    await db.query(
+      `INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, ?, 'pending', NOW())`,
+      [user.id, amount]
+    );
+    let adminUPI  = process.env.ADMIN_UPI  || 'admin@upi';
+    let adminName = process.env.ADMIN_NAME || 'FastWin';
+    let bankMethods = [];
+    try {
+      const [upiList] = await db.query(
+        `SELECT * FROM payment_methods WHERE is_active=1 AND type='upi' LIMIT 1`
+      );
+      if (upiList.length) { adminUPI = upiList[0].value; adminName = upiList[0].name; }
+      const [bankList] = await db.query(
+        `SELECT * FROM payment_methods WHERE is_active=1 AND type='bank'`
+      );
+      bankMethods = bankList;
+    } catch(e) { console.error('Payment fetch error:', e.message); }
+
+    const upiLink = `upi://pay?pa=${adminUPI}&pn=${encodeURIComponent(adminName)}&am=${amount}&cu=INR&tn=FastWin`;
+    sessions[chatId] = { step: 'await_utr', depositAmount: amount };
+
+    let msg =
+      `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
+      `👆 Tap button to pay via any UPI app\n` +
+      `_(GPay, PhonePe, Paytm etc.)_\n\n` +
+      `📱 UPI: \`${adminUPI}\`\n` +
+      `💰 Amount: *Rs. ${amount}*\n`;
+
+    if (bankMethods.length) {
+      msg += `\n🏦 *Bank Transfer:*\n`;
+      bankMethods.forEach(b => {
+        msg += `• *${b.name}*\n  ${b.extra || ''}\n  Holder: ${b.value}\n`;
+      });
+    }
+    msg += `\n━━━━━━━━━━━━━━━━\n✅ After payment enter *UTR number*:`;
+
+    await bot.sendMessage(chatId, msg, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[{
+          text: `💳 Pay Rs. ${amount} — Tap Here`,
+          url: upiLink
+        }]]
+      }
+    });
+    return;
+  }
+
+  if (session.step === 'await_utr') {
+    const utr = text.trim().replace(/\s+/g,'').toUpperCase();
+    if (utr.length < 10) {
+      await send(chatId, `❌ Invalid UTR.\n\nUTR is 12 digit number from your payment app.\nPlease enter correct UTR:`);
+      return;
+    }
+    await send(chatId, `🔍 Verifying UTR: \`${utr}\`\n_Please wait..._`);
+    const [existing] = await db.query('SELECT id FROM transactions WHERE utr_number = ?', [utr]);
+    if (existing.length) {
+      await send(chatId, `❌ *This UTR is already used!*\n\nEnter correct UTR or contact support.`);
+      return;
+    }
+    await db.query('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?', [session.depositAmount, user.id]);
+    await db.query(
+      `INSERT INTO transactions (user_id, type, amount, utr_number, status, source, created_at)
+       VALUES (?, 'deposit', ?, ?, 'approved', 'utr', NOW())`,
+      [user.id, session.depositAmount, utr]
+    );
+    await db.query(
+      `UPDATE deposits SET status='approved', utr_number=?, approved_at=NOW()
+       WHERE user_id=? AND amount=? AND status='pending' ORDER BY created_at DESC LIMIT 1`,
+      [utr, user.id, session.depositAmount]
+    );
+    const [updated] = await db.query('SELECT wallet_balance FROM users WHERE id=?', [user.id]);
+    delete sessions[chatId];
+    await send(chatId,
+      `✅ *Payment Successful!*\n━━━━━━━━━━━━━━━━\n\n` +
+      `💰 Added: *Rs. ${session.depositAmount}*\n` +
+      `🔢 UTR: \`${utr}\`\n` +
+      `👛 Balance: *Rs. ${updated[0].wallet_balance}*\n\n` +
+      `Place your bet now! 🎯`,
+      MAIN_MENU
+    );
+    try {
+      const adminId = process.env.ADMIN_TELEGRAM_ID;
+      if (adminId) {
+        await bot.sendMessage(adminId,
+          `💰 *New Deposit!*\n\n👤 ${user.name}\n💰 Rs. ${session.depositAmount}\n🔢 UTR: ${utr}\n✅ Auto approved`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+    } catch(e) {}
+    return;
+  }
+
+  if (session.step === 'manual_utr') {
+    const utr = text.trim().toUpperCase();
+    if (utr.length < 10) {
+      await send(chatId, '❌ Invalid UTR. Please enter correct UTR number.');
+      return;
+    }
+    const { verifyAndCredit } = require('../api/services/verification');
+    await verifyAndCredit({ utr, amount: session.depositAmount }, 'manual', String(chatId), bot, 'telegram');
+    delete sessions[chatId];
+    return;
+  }
+
+  if (session.step === 'withdraw_amount') {
+    const amount    = parseFloat(text);
+    const MIN       = parseFloat(process.env.MIN_WITHDRAW || 200);
+    const MAX       = parseFloat(process.env.MAX_WITHDRAW || 25000);
+    const freshUser = await getUser(String(chatId));
+    if (isNaN(amount) || amount < MIN) { await send(chatId, `❌ Minimum withdrawal is Rs. ${MIN}`); return; }
+    if (amount > MAX) { await send(chatId, `❌ Maximum withdrawal is Rs. ${MAX}`); return; }
+    if (amount > freshUser.wallet_balance) {
+      await send(chatId, `❌ Insufficient balance!\n\nBalance: Rs. ${freshUser.wallet_balance}`);
+      return;
+    }
+    sessions[chatId] = { step: 'withdraw_confirm', amount };
+    await bot.sendMessage(chatId,
+      `📋 *Confirm Withdrawal*\n━━━━━━━━━━━━━━━━\n\n💰 Amount: *Rs. ${amount}*\n📱 UPI: *${freshUser.upi_id}*`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ YES - Confirm', callback_data: 'wd_yes' },
+            { text: '❌ NO - Cancel',   callback_data: 'wd_no'  }
+          ]]
+        }
+      }
+    );
+    return;
+  }
+
+  if (session.step === 'withdraw_confirm') {
+    const t = text.toUpperCase();
+    if (t === 'NO') { delete sessions[chatId]; await send(chatId, '❌ Cancelled.', MAIN_MENU); return; }
+    if (t === 'YES') { await processWithdraw(chatId, session); return; }
+    await send(chatId, 'Please use the buttons.');
+    return;
+  }
+
+  if (session.step === 'update_name') {
+    const name = text.trim();
+    if (name.length < 2) { await send(chatId, '❌ Name too short. Enter valid name:'); return; }
+    await db.query('UPDATE users SET name = ? WHERE whatsapp_number = ?', [name, String(chatId)]);
+    delete sessions[chatId];
+    await send(chatId, `✅ *Name Updated!*\n\nNew Name: *${name}*`, MAIN_MENU);
+    return;
+  }
+
+  if (session.step === 'update_upi') {
+    const upi = text.trim().toLowerCase();
+    if (!upi.includes('@')) { await send(chatId, '❌ Invalid UPI ID.\nExample: name@ybl'); return; }
+    await db.query('UPDATE users SET upi_id = ? WHERE whatsapp_number = ?', [upi, String(chatId)]);
+    delete sessions[chatId];
+    await send(chatId, `✅ *UPI Updated!*\n\nNew UPI: *${upi}*`, MAIN_MENU);
+    return;
+  }
+
+  if (session.step === 'update_bank_ac') {
+    if (!/^\d{9,18}$/.test(text.trim())) {
+      await send(chatId, '❌ Invalid account number. Enter valid account number:');
+      return;
+    }
+    sessions[chatId] = { step: 'update_bank_ifsc', ac: text.trim() };
+    await send(chatId, `✅ Account: *${text.trim()}*\n\nEnter *IFSC Code*:\n_Example: HDFC0001234_`);
+    return;
+  }
+
+  if (session.step === 'update_bank_ifsc') {
+    const ifsc = text.trim().toUpperCase();
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+      await send(chatId, '❌ Invalid IFSC code.\nExample: HDFC0001234');
+      return;
+    }
+    sessions[chatId] = { ...session, step: 'update_bank_name', ifsc };
+    await send(chatId, `✅ IFSC: *${ifsc}*\n\nEnter *Bank Name*:\n_Example: HDFC Bank_`);
+    return;
+  }
+
+  if (session.step === 'update_bank_name') {
+    const bankName = text.trim();
+    if (bankName.length < 2) { await send(chatId, '❌ Enter valid bank name:'); return; }
+    const bankInfo = `${bankName}|${session.ac}|${session.ifsc}`;
+    await db.query('UPDATE users SET upi_id = ? WHERE whatsapp_number = ?', [bankInfo, String(chatId)]);
+    delete sessions[chatId];
+    await send(chatId,
+      `✅ *Bank Account Updated!*\n━━━━━━━━━━━━━━━━\n\n` +
+      `🏦 Bank: *${bankName}*\n💳 AC: *${session.ac}*\n📋 IFSC: *${session.ifsc}*`,
+      MAIN_MENU
+    );
+    return;
+  }
+}
+
+// ══════════════════════════════════════════════════
+// PROCESS WITHDRAW
+// ══════════════════════════════════════════════════
+async function processWithdraw(chatId, session) {
+  const freshUser = await getUser(String(chatId));
+  await db.query('UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?', [session.amount, freshUser.id]);
+  await db.query(
+    `INSERT INTO withdrawals (user_id, amount, upi_id, status, created_at) VALUES (?, ?, ?, 'pending', NOW())`,
+    [freshUser.id, session.amount, freshUser.upi_id]
+  );
+  delete sessions[chatId];
+  await send(chatId,
+    `✅ *Withdrawal Submitted!*\n━━━━━━━━━━━━━━━━\n\n` +
+    `💰 Amount: *Rs. ${session.amount}*\n` +
+    `📱 UPI: *${freshUser.upi_id}*\n` +
+    `🕐 Processing: 1-4 hours\n\n` +
+    `You will be notified when paid! 🔔`,
+    MAIN_MENU
+  );
+  try {
+    const adminId = process.env.ADMIN_TELEGRAM_ID;
+    if (adminId) {
+      await bot.sendMessage(adminId,
+        `🔔 *New Withdrawal!*\n\n👤 ${freshUser.name}\n📱 ${freshUser.upi_id}\n💰 Rs. ${session.amount}\n\nCheck admin panel!`,
+        { parse_mode: 'Markdown' }
+      );
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════
+// BET PROCESSING
+// ══════════════════════════════════════════════════
+async function processBets(chatId, user, text, market) {
+  const lines  = text.split('\n').map(l => l.trim()).filter(l => l);
+  const bets   = [];
+  const errors = [];
+  for (const line of lines) {
+    const match = line.match(/^(\d+)\s*[=\-\.\,\:\s]\s*(\d+)$/);
+    if (!match) { errors.push(`❌ \`${line}\``); continue; }
+    const number = match[1];
+    const amount = parseFloat(match[2]);
+    const MIN    = parseFloat(process.env.MIN_BET || 10);
+    if (isNaN(amount) || amount < MIN) { errors.push(`❌ Min Rs.${MIN}: \`${line}\``); continue; }
+    const betType = detectBetType(number, market.status);
+    if (!betType) { errors.push(`❌ Invalid: \`${number}\``); continue; }
+    bets.push({ number, amount, betType });
+  }
+  if (!bets.length) {
+    await send(chatId, `❌ No valid bets found.\n\n${errors.join('\n')}\n\nExample:\n4=50\n12=25\n126=10`);
+    return;
+  }
+  const totalAmount = bets.reduce((s, b) => s + b.amount, 0);
+  const freshUser   = await getUser(String(chatId));
+  if (totalAmount > freshUser.wallet_balance) {
+    await send(chatId, `❌ *Insufficient balance!*\n\nTotal: Rs. ${totalAmount}\nBalance: Rs. ${freshUser.wallet_balance}`);
+    return;
+  }
+  let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
+  bets.forEach(b => { msg += `${b.betType.label}: *${b.number}* → Rs. ${b.amount}\n`; });
+  if (errors.length) msg += `\n⚠️ Skipped:\n${errors.join('\n')}\n`;
+  msg += `\n💰 Total: *Rs. ${totalAmount}*\n💰 After: Rs. ${freshUser.wallet_balance - totalAmount}`;
+  sessions[chatId] = { step: 'play_confirm', market, bets, totalAmount };
+  await bot.sendMessage(chatId, msg, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '✅ YES - Confirm', callback_data: 'bet_yes' },
+        { text: '❌ NO - Cancel',   callback_data: 'bet_no'  }
+      ]]
+    }
+  });
+}
+
+function detectBetType(number, marketStatus) {
+  const isClose = marketStatus === 'open_resulted';
+  const len     = number.length;
+  if (len === 1) return isClose ? {key:'close_single',label:'Close Single',multiplier:9} : {key:'open_single',label:'Open Single',multiplier:9};
+  if (len === 2) { if (isClose) return null; return {key:'jodi',label:'Jodi',multiplier:90}; }
+  if (len === 3) {
+    if (/^(\d)\1\1$/.test(number)) return isClose ? {key:'close_pana',label:'Close Triple Pana',multiplier:1000} : {key:'open_pana',label:'Open Triple Pana',multiplier:1000};
+    return isClose ? {key:'close_pana',label:'Close Pana',multiplier:300} : {key:'open_pana',label:'Open Pana',multiplier:150};
+  }
+  return null;
+}
+
+async function confirmBets(chatId, user, session) {
+  const { bets, market, totalAmount } = session;
+  const freshUser = await getUser(String(chatId));
+  for (const bet of bets) {
+    await db.query(
+      `INSERT INTO bets (user_id, market_id, bet_type, number, amount, multiplier, possible_win, status, placed_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [freshUser.id, market.id, bet.betType.key, bet.number, bet.amount, bet.betType.multiplier, bet.amount * bet.betType.multiplier]
+    );
+  }
+  await db.query('UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?', [totalAmount, freshUser.id]);
+  const [updated] = await db.query('SELECT wallet_balance FROM users WHERE id = ?', [freshUser.id]);
+  delete sessions[chatId];
+  let msg = `✅ *${bets.length} Bet(s) Placed!*\n━━━━━━━━━━━━━━━━\n\n`;
+  bets.forEach(b => { msg += `${b.betType.label}: *${b.number}* → Rs. ${b.amount}\n`; });
+  msg += `\n💰 Total: Rs. ${totalAmount}\n💰 Balance: *Rs. ${updated[0].wallet_balance}*\n\nGood luck! 🤞`;
+  await send(chatId, msg, MAIN_MENU);
+}
+
+// ══════════════════════════════════════════════════
 // ⚙️ SETTINGS
 // ══════════════════════════════════════════════════
 async function handleSettings(chatId, user) {
