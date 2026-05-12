@@ -93,16 +93,20 @@ async function declareResult(marketId, resultData) {
         ? String(closePana.split('').reduce((a,b) => a+parseInt(b), 0) % 10)
         : '—';
 
-      const msg =
-        `🎲 *${market[0].name} — Result*\n━━━━━━━━━━━━━━━━\n\n` +
-        `*OPEN*\n` +
-        `Pana: *${openPana || '—'}*  Ank: *${openAnk}*\n\n` +
-        `*JODI: ${jodi || '—'}*\n\n` +
-        (closePana
-          ? `*CLOSE*\nPana: *${closePana}*  Ank: *${closeAnk}*\n\n`
-          : ''
-        ) +
-        `🎯 Place your next bet!`;
+      // Build result string like: 122-5 or 122-52-255
+let resultStr = '';
+if (openPana)  resultStr += openPana;
+if (openAnk)   resultStr += `-${openAnk}`;
+if (jodi)      resultStr += `${openAnk ? '' : '-'}${jodi}`;
+if (closePana) resultStr += `-${closePana}`;
+
+const msg =
+  `🎲 *${market[0].name}*\n` +
+  `*${resultStr}*\n━━━━━━━━━━━━━━━━\n\n` +
+  (openPana  ? `*OPEN* — Pana: *${openPana}* | Ank: *${openAnk}*\n` : '') +
+  (jodi      ? `*JODI: ${jodi}*\n` : '') +
+  (closePana ? `*CLOSE* — Pana: *${closePana}* | Ank: *${closeAnk}*\n` : '') +
+  `\n🎯 Place your next bet!`;
 
       for (const u of allUsers) {
         try {
