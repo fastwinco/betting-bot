@@ -684,17 +684,21 @@ async function handleGameRate(chatId) {
   }
 
   await send(
-    chatId,
-    `📊 *Game Rates*\n━━━━━━━━━━━━━━━━\n\n` +
-    `Open Single → *${rates.open_single}x*\n` +
-    `Open Pana → *${rates.open_pana}x*\n` +
-    `Jodi → *${rates.jodi}x*\n` +
-    `Close Single → *${rates.close_single}x*\n` +
-    `Close Pana → *${rates.close_pana}x*\n` +
-    `Triple Pana → *${rates.triple_pana}x*\n\n` +
-    `_Rs.100 on Jodi = Rs.${rates.jodi * 100} win_`,
-    MAIN_MENU
-  );
+  chatId,
+  `🎯 *FASTWIN GAME RATES*\n` +
+  `━━━━━━━━━━━━━━━━━━\n\n` +
+
+  `🔹 Open Single  : *${rates.open_single}x*\n` +
+  `🔹 Open Pana    : *${rates.open_pana}x*\n` +
+  `🔹 Jodi         : *${rates.jodi}x*\n` +
+  `🔹 Close Single : *${rates.close_single}x*\n` +
+  `🔹 Close Pana   : *${rates.close_pana}x*\n` +
+  `🔹 Triple Pana  : *${rates.triple_pana}x*\n\n` +
+
+  `━━━━━━━━━━━━━━━━━━\n` +
+  `💰 *Rs.100 on Jodi = Rs.${rates.jodi * 100} Winning*`,
+  MAIN_MENU
+);
 }
 
 // ── HELP ──────────────────────────────────────────
