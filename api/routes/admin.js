@@ -286,31 +286,72 @@ router.post('/markets/:id/result', authCheck, async (req, res) => {
   try {
     const { id } = req.params;
     const { openPana, closePana } = req.body;
-    if (!openPana) {
-  return res.status(400).json({ error: 'Open Pana required hai' });
-    }
+    let openAnk;
+let closeAnk = null;
+let jodi = null;
+let status = 'open_resulted';
 
-const openAnk  = String(openPana.split('').reduce((a,b) => a + parseInt(b), 0) % 10);
-const closeAnk = closePana ? String(closePana.split('').reduce((a,b) => a + parseInt(b), 0) % 10) : null;
-const jodi     = closeAnk ? `${openAnk}${closeAnk}` : null;
-const status   = closePana ? 'resulted' : 'open_resulted';
+// OPEN RESULT
+if (openPana && !closePana) {
 
-    await db.query(
-      `UPDATE markets SET
-        status=?,
-        result_single=?,
-        result_jodi=?,
-        result_open_pana=?,
-        result_close_pana=?,
-        resulted_at=NOW()
-       WHERE id=?`,
-      [status, openAnk, jodi, openPana, closePana||null, id]
-    );
+  openAnk = digitSum(openPana);
 
+  await db.query(
+    `UPDATE markets SET
+      status=?,
+      result_single=?,
+      result_open_pana=?,
+      resulted_at=NOW()
+     WHERE id=?`,
+    ['open_resulted', openAnk, openPana, id]
+  );
+
+  return res.json({
+    success: true,
+    openAnk
+  });
+}
+
+// CLOSE RESULT
+const [rows] = await db.query(
+  `SELECT result_open_pana, result_single
+   FROM markets
+   WHERE id=?`,
+  [id]
+);
+
+if (!rows.length || !rows[0].result_open_pana) {
+  return res.status(400).json({
+    error: 'Open result not declared'
+  });
+}
+
+const savedOpenPana = rows[0].result_open_pana;
+openAnk = rows[0].result_single;
+
+closeAnk = digitSum(closePana);
+
+jodi = `${openAnk}${closeAnk}`;
+
+status = 'resulted';
+
+await db.query(
+  `UPDATE markets SET
+    status=?,
+    result_jodi=?,
+    result_close_pana=?,
+    resulted_at=NOW()
+   WHERE id=?`,
+  [status, jodi, closePana, id]
+);
+    
     const { declareResult } = require('../services/result-engine');
     const summary = await declareResult(id, {
-      single: openAnk, jodi, openPana, closePana
-    });
+  single: openAnk,
+  jodi,
+  openPana: savedOpenPana || openPana,
+  closePana
+});
 
     // WhatsApp par result broadcast
     try {
