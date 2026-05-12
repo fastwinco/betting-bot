@@ -473,7 +473,7 @@ async function handleStep(chatId, user, text, session) {
   if (session.step === 'update_name') {
     const name = text.trim();
     if (name.length < 2) { await send(chatId, '❌ Name too short. Enter valid name:'); return; }
-    await db.query('UPDATE users SET name = ? WHERE whatsapp_number = ?', [name, String(chatId)]);
+    await db.query('UPDATE users SET name = ? WHERE telegram_id = ?', [name, String(chatId)]);
     delete sessions[chatId];
     await send(chatId, `✅ *Name Updated!*\n\nNew Name: *${name}*`, MAIN_MENU);
     return;
@@ -482,7 +482,7 @@ async function handleStep(chatId, user, text, session) {
   if (session.step === 'update_upi') {
     const upi = text.trim().toLowerCase();
     if (!upi.includes('@')) { await send(chatId, '❌ Invalid UPI ID.\nExample: name@ybl'); return; }
-    await db.query('UPDATE users SET upi_id = ? WHERE whatsapp_number = ?', [upi, String(chatId)]);
+    await db.query('UPDATE users SET upi_id = ? WHERE telegram_id = ?', [upi, String(chatId)]);
     delete sessions[chatId];
     await send(chatId, `✅ *UPI Updated!*\n\nNew UPI: *${upi}*`, MAIN_MENU);
     return;
@@ -507,7 +507,7 @@ async function handleStep(chatId, user, text, session) {
     const bankName = text.trim();
     if (bankName.length < 2) { await send(chatId, '❌ Enter valid bank name:'); return; }
     const bankInfo = `${bankName}|${session.ac}|${session.ifsc}`;
-    await db.query('UPDATE users SET bank_account = ? WHERE whatsapp_number = ?', [bankInfo, String(chatId)]);
+    await db.query('UPDATE users SET bank_account = ? WHERE telegram_id = ?', [bankInfo, String(chatId)]);
     delete sessions[chatId];
     await send(chatId,
       `✅ *Bank Account Updated!*\n━━━━━━━━━━━━━━━━\n\n🏦 Bank: *${bankName}*\n💳 AC: *${session.ac}*\n📋 IFSC: *${session.ifsc}*`,
