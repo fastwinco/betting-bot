@@ -116,11 +116,18 @@ else {
   resultStr = 'Result Pending';
 }
 
+let nextBetText = '🎯 Place your next bet!';
+
+// If final jodi result is declared
+if (jodi && closePana) {
+  nextBetText = '⏳ Place your next bet Tomorrow';
+}
+
 const msg =
 `🎲 *${market[0].name}*\n` +
 `──────────────\n` +
 `*${resultStr}*\n\n` +
-`🎯 Place your next bet!`;
+`${nextBetText}`;
 
       for (const u of allUsers) {
         try {
