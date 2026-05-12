@@ -650,12 +650,41 @@ async function handleAddMoney(chatId, user) {
 
 // ── GAME RATE ─────────────────────────────────────
 async function handleGameRate(chatId) {
-  let rates = { open_single:9, open_pana:150, jodi:90, close_single:9, close_pana:300, triple_pana:1000 };
+
+  let rates = {
+    open_single: 9,
+    open_pana: 150,
+    jodi: 90,
+    close_single: 9,
+    close_pana: 300,
+    triple_pana: 1000
+  };
+
   try {
-    const [rows] = await db.query(`SELECT * FROM game_rates LIMIT 1`);
-    if (rows.length) rates = { ...rates, ...rows[0] };
-  } catch(e) {}
-  await send(chatId,
+
+    const [rows] = await db.query(
+      `SELECT * FROM game_rates ORDER BY id DESC LIMIT 1`
+    );
+
+    if (rows.length) {
+
+      const row = rows[0];
+
+      // Map DB values properly
+      rates.open_single  = row.open_single  || rates.open_single;
+      rates.open_pana    = row.open_pana    || rates.open_pana;
+      rates.jodi         = row.jodi         || rates.jodi;
+      rates.close_single = row.close_single || rates.close_single;
+      rates.close_pana   = row.close_pana   || rates.close_pana;
+      rates.triple_pana  = row.triple_pana  || rates.triple_pana;
+    }
+
+  } catch (e) {
+    console.log('Game rate error:', e.message);
+  }
+
+  await send(
+    chatId,
     `📊 *Game Rates*\n━━━━━━━━━━━━━━━━\n\n` +
     `Open Single → *${rates.open_single}x*\n` +
     `Open Pana → *${rates.open_pana}x*\n` +
