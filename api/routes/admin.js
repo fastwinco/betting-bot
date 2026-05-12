@@ -356,7 +356,7 @@ await db.query(
 // Telegram notification
 try {
 
-  const bot = require('../../bot/index');
+  const { bot } = require('../../bot/index');
 
   const [mkt] = await db.query(
     'SELECT name FROM markets WHERE id=?',
