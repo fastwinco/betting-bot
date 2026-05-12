@@ -232,7 +232,7 @@ bot.on('message', async (msg) => {
   }
 
   await db.query(
-    'UPDATE users SET mobile=? WHERE whatsapp_number=?',
+    'UPDATE users SET mobile=? WHERE telegram_id=?',
     [mobile, String(chatId)]
   );
 
@@ -258,7 +258,7 @@ bot.on('message', async (msg) => {
   }
 
   await db.query(
-    'UPDATE users SET mobile=? WHERE whatsapp_number=?',
+    'UPDATE users SET mobile=? WHERE telegram_id=?',
     [text, String(chatId)]
   );
 
