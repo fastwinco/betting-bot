@@ -452,7 +452,9 @@ router.get('/bets/by-market/:id', authCheck, async (req, res) => {
 
 router.post('/rates', authCheck, async (req, res) => {
   try {
-
+    
+    console.log('RATE BODY:', req.body);
+    
     const {
       open_single,
       open_pana,
