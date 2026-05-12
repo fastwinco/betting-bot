@@ -671,12 +671,12 @@ async function handleGameRate(chatId) {
       const row = rows[0];
 
       // Map DB values properly
-      rates.open_single  = row.open_single  || rates.open_single;
-      rates.open_pana    = row.open_pana    || rates.open_pana;
-      rates.jodi         = row.jodi         || rates.jodi;
-      rates.close_single = row.close_single || rates.close_single;
-      rates.close_pana   = row.close_pana   || rates.close_pana;
-      rates.triple_pana  = row.triple_pana  || rates.triple_pana;
+      rates.open_single  = parseFloat(row.open_single);
+      rates.open_pana    = parseFloat(row.open_pana);
+      rates.jodi         = parseFloat(row.jodi);
+      rates.close_single = parseFloat(row.close_single);
+      rates.close_pana   = parseFloat(row.close_pana);
+      rates.triple_pana  = parseFloat(row.triple_pana);
     }
 
   } catch (e) {
