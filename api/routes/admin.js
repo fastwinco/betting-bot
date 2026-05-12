@@ -352,34 +352,6 @@ await db.query(
   closePana
 });
 
-    // WhatsApp par result broadcast
-    try {
-      const { getSock } = require('../../bot/index');
-      const sock = getSock();
-      if (sock) {
-        const [mkt] = await db.query('SELECT * FROM markets WHERE id=?', [id]);
-        const [users] = await db.query(`SELECT whatsapp_number FROM users WHERE status='active'`);
-        const msg =
-          `🎲 *RESULT DECLARED!*\n` +
-          `━━━━━━━━━━━━━━━━━━\n\n` +
-          `🏪 *${mkt[0].name}*\n\n` +
-          `*OPEN*\n` +
-          `Pana: *${savedOpenPana || openPana}*\n` +
-          `Ank: *${openAnk}*\n\n` +
-          `*JODI: ${jodi}*\n\n` +
-          `*CLOSE*\n` +
-          `Pana: *${closePana}*\n` +
-          `Ank: *${closeAnk}*\n\n` +
-          `_Agli market ke liye MARKETS bhejo_ 🎯`;
-        for (const u of users) {
-          try {
-            await sock.sendMessage(`${u.whatsapp_number}@s.whatsapp.net`, { text: msg });
-            await new Promise(r => setTimeout(r, 100));
-          } catch (e) {}
-        }
-      }
-    } catch (e) {}
-
     res.json({ success: true, openAnk, closeAnk, jodi, summary });
   } catch (err) {
     res.status(500).json({ error: err.message });
