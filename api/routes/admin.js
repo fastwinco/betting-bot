@@ -62,7 +62,7 @@ router.get('/stats', authCheck, async (req, res) => {
 router.get('/deposits/pending', authCheck, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT d.*, u.name, u.whatsapp_number FROM deposits d
+      `SELECT d.*, u.name, u.telegram_id FROM deposits d
        JOIN users u ON d.user_id = u.id
        WHERE d.status = 'pending' ORDER BY d.created_at DESC`
     );
@@ -78,7 +78,7 @@ router.post('/deposits/:id/approve', authCheck, async (req, res) => {
     const { id } = req.params;
     const { utr } = req.body;
     const [deps] = await db.query(
-      `SELECT d.*, u.whatsapp_number FROM deposits d
+      `SELECT d.*, u.telegram_id FROM deposits d
        JOIN users u ON d.user_id = u.id WHERE d.id = ?`, [id]
     );
     if (!deps.length) return res.status(404).json({ error: 'Not found' });
@@ -91,7 +91,7 @@ router.post('/deposits/:id/approve', authCheck, async (req, res) => {
       const sock = getSock();
       if (sock) {
         const [updated] = await db.query('SELECT wallet_balance FROM users WHERE id=?', [dep.user_id]);
-        await sock.sendMessage(`${dep.whatsapp_number}@s.whatsapp.net`, {
+        await sock.sendMessage(`${dep.telegram_id}@s.whatsapp.net`, {
           text: `✅ *Deposit Approved!*\n━━━━━━━━━━━━━━━━━━\n\n💰 Amount: *Rs. ${dep.amount}*\n👛 Balance: *Rs. ${updated[0].wallet_balance}*\n\n_BET bhejo aur jeeto!_ 🎯`
         });
       }
@@ -107,7 +107,7 @@ router.post('/deposits/:id/reject', authCheck, async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    const [deps] = await db.query(`SELECT d.*, u.whatsapp_number FROM deposits d JOIN users u ON d.user_id = u.id WHERE d.id=?`, [id]);
+    const [deps] = await db.query(`SELECT d.*, u.telegram_id FROM deposits d JOIN users u ON d.user_id = u.id WHERE d.id=?`, [id]);
     if (!deps.length) return res.status(404).json({ error: 'Not found' });
     await db.query(`UPDATE deposits SET status='rejected', admin_note=? WHERE id=?`, [reason || 'Rejected', id]);
     try {
