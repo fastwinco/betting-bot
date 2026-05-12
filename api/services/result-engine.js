@@ -101,9 +101,10 @@ if (jodi)      resultStr += `${openAnk ? '' : '-'}${jodi}`;
 if (closePana) resultStr += `-${closePana}`;
 
 const msg =
-  `🎲 *${market[0].name}*\n` +
-  `*${resultStr}*\n━━━━━━━━━━━━━━━━\n\n` +
-  `\n🎯 Place your next bet!`;
+    `🎲 *${market[0].name}*\n` +
+    `──────────────\n\n` +
+    `*${resultStr}*\n\n` +
+    `🎯 Place your next bet!`;
 
       for (const u of allUsers) {
         try {
