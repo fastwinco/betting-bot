@@ -353,7 +353,63 @@ await db.query(
   closePana
 });
 
-    res.json({ success: true, openAnk, closeAnk, jodi, summary });
+// Telegram notification
+try {
+
+  const bot = require('../../bot/index');
+
+  const [mkt] = await db.query(
+    'SELECT name FROM markets WHERE id=?',
+    [id]
+  );
+
+  let msg = '';
+
+  if (!closePana || closePana === '') {
+
+    msg =
+`🎲 *${mkt[0].name}*
+━━━━━━━━━━━━
+
+${openPana}-${openAnk}
+
+🎯 Place your next bet!`;
+
+  } else {
+
+    msg =
+`🎲 *${mkt[0].name}*
+━━━━━━━━━━━━
+
+${savedOpenPana}-${jodi}-${closePana}
+
+🎯 Place your bet tomorrow!`;
+
+  }
+
+  const [users] = await db.query(
+    'SELECT whatsapp_number FROM users WHERE status="active"'
+  );
+
+  for (const u of users) {
+
+    try {
+
+      await bot.sendMessage(
+        u.whatsapp_number,
+        msg,
+        { parse_mode: 'Markdown' }
+      );
+
+    } catch(e) {}
+
+  }
+
+} catch(e) {
+  console.log(e.message);
+}
+
+res.json({ success: true, openAnk, closeAnk, jodi, summary });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
