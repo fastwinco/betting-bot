@@ -387,15 +387,6 @@ router.post('/change-credentials', authCheck, async (req, res) => {
   }
 });
 
-// GAME RATES
-router.post('/rates', authCheck, async (req, res) => {
-  try {
-    res.json({ success: true, rates: req.body });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 function digitSum(p) {
   if (!p) return '0';
   return String(p.split('').reduce((a,b) => a + parseInt(b), 0) % 10);
