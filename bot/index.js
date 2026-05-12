@@ -817,4 +817,6 @@ async function handleSettings(chatId, user) {
   }
 );
 
+}
+
 module.exports = { bot, sessions };
