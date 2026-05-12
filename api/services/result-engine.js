@@ -103,7 +103,7 @@ if (closePana) resultStr += `-${closePana}`;
 const msg =
 `🎲 *${market[0].name}*\n` +
 `──────────────\n` +
-`*${resultStr}*\n\n` +
+`*${resultStr}*\n` +
 `🎯 Place your next bet!`;
 
       for (const u of allUsers) {
