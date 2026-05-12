@@ -95,10 +95,26 @@ async function declareResult(marketId, resultData) {
 
       // Build result string like: 122-5 or 122-52-255
 let resultStr = '';
-if (openPana)  resultStr += openPana;
-if (openAnk)   resultStr += `-${openAnk}`;
-if (jodi)      resultStr += `${openAnk ? '' : '-'}${jodi}`;
-if (closePana) resultStr += `-${closePana}`;
+
+// Open Result
+if (openPana && single && !jodi && !closePana) {
+  resultStr = `${openPana}-${single}`;
+}
+
+// Full Jodi Result
+else if (openPana && jodi && closePana) {
+  resultStr = `${openPana}-${jodi}-${closePana}`;
+}
+
+// Only Jodi
+else if (jodi && !openPana && !closePana) {
+  resultStr = jodi;
+}
+
+// Fallback
+else {
+  resultStr = 'Result Pending';
+}
 
 const msg =
 `🎲 *${market[0].name}*\n` +
