@@ -545,23 +545,63 @@ async function handleBetHistoryMarkets(chatId, user) {
 }
 
 async function showBetHistory(chatId, user, market) {
+
   const [bets] = await db.query(
-    `SELECT * FROM bets WHERE user_id = ? AND market_id = ? ORDER BY placed_at DESC`,
+    `SELECT * FROM bets
+     WHERE user_id = ? AND market_id = ?
+     ORDER BY placed_at DESC`,
     [user.id, market.id]
   );
-  if (!bets.length) { await send(chatId, `📜 No bets for *${market.name}*`, MAIN_MENU); return; }
-  let msg = `📜 *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
-  let total = 0; let won = 0;
-  bets.forEach(b => {
-    const icon = b.status === 'won' ? '✅' : b.status === 'lost' ? '❌' : '⏳';
-    const type = b.bet_type.replace(/_/g, ' ').toUpperCase();
-    msg  += `${icon} ${type}: *${b.number}* → Rs. ${b.amount}`;
-    if (b.status === 'won') msg += ` *(Won Rs. ${b.actual_win})*`;
-    msg  += '\n';
-    total += parseFloat(b.amount);
-    if (b.status === 'won') won += parseFloat(b.actual_win || 0);
+
+  if (!bets.length) {
+    await send(
+      chatId,
+      `📜 *${market.name}*\n━━━━━━━━━━━━━━━━\n\nNo bets found.`,
+      MAIN_MENU
+    );
+    return;
+  }
+
+  let msg = `📜 *${market.name}*\n━━━━━━━━━━━━━━━━`;
+
+  let currentDate = '';
+
+  bets.forEach((b) => {
+
+    const betDate = new Date(b.placed_at).toLocaleDateString(
+      'en-IN',
+      {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }
+    );
+
+    // Date heading
+    if (betDate !== currentDate) {
+      currentDate = betDate;
+      msg += `\n\n📅 *${betDate}*`;
+    }
+
+    let icon = '⏳';
+
+    if (b.status === 'won') {
+      icon = '✅';
+    } else if (b.status === 'lost') {
+      icon = '❌';
+    }
+
+    const type = b.bet_type
+      .replace(/_/g, ' ')
+      .toUpperCase();
+
+    msg += `\n${icon} ${type}: *${b.number}* → Rs. ${b.amount}`;
+
+    if (b.status === 'won' && b.actual_win) {
+      msg += ` *(Won Rs. ${b.actual_win})*`;
+    }
   });
-  msg += `\n━━━━━━━━━━━━━━━━\n💰 Total Bet: Rs. ${total}\n🏆 Total Won: Rs. ${won}`;
+
   await send(chatId, msg, MAIN_MENU);
 }
 
