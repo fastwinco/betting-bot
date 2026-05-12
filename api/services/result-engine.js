@@ -120,7 +120,7 @@ let nextBetText = '🎯 Place your next bet!';
 
 // If final jodi result is declared
 if (jodi && closePana) {
-  nextBetText = '⏳ Place your next bet Tomorrow';
+  nextBetText = '🎯 Place your next bet tomorrow!';
 }
 
 const msg =
