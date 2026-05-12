@@ -15,7 +15,7 @@ async function send(chatId, text, opts = {}) {
 
 async function getUser(telegramId) {
   const [rows] = await db.query(
-    'SELECT * FROM users WHERE whatsapp_number = ? AND status = ?',
+    'SELECT * FROM users WHERE telegram_id = ? AND status = ?',
     [String(telegramId), 'active']
   );
   return rows[0] || null;
