@@ -666,6 +666,8 @@ async function handleGameRate(chatId) {
       `SELECT * FROM game_rates ORDER BY id DESC LIMIT 1`
     );
 
+    console.log('GAME RATE ROW:', rows[0]);
+
     if (rows.length) {
 
       const row = rows[0];
