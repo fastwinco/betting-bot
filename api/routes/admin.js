@@ -292,8 +292,7 @@ let jodi = null;
 let status = 'open_resulted';
 
 // OPEN RESULT
-if (openPana && !closePana) {
-
+if (openPana && (!closePana || closePana === ''))
   openAnk = digitSum(openPana);
 
   await db.query(
@@ -365,7 +364,7 @@ await db.query(
           `━━━━━━━━━━━━━━━━━━\n\n` +
           `🏪 *${mkt[0].name}*\n\n` +
           `*OPEN*\n` +
-          `Pana: *${openPana}*\n` +
+          `Pana: *${savedOpenPana || openPana}*\n` +
           `Ank: *${openAnk}*\n\n` +
           `*JODI: ${jodi}*\n\n` +
           `*CLOSE*\n` +
