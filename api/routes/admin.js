@@ -292,7 +292,8 @@ let jodi = null;
 let status = 'open_resulted';
 
 // OPEN RESULT
-if (openPana && (!closePana || closePana === ''))
+if (openPana && (!closePana || closePana === '')) {
+
   openAnk = digitSum(openPana);
 
   await db.query(
@@ -311,7 +312,6 @@ if (openPana && (!closePana || closePana === ''))
   });
 }
 
-}
 // CLOSE RESULT
 const [rows] = await db.query(
   `SELECT result_open_pana, result_single
@@ -349,7 +349,7 @@ await db.query(
     const summary = await declareResult(id, {
   single: openAnk,
   jodi,
-  openPana: savedOpenPana || openPana,
+  openPana: savedOpenPana,
   closePana
 });
 
