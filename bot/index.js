@@ -155,6 +155,17 @@ bot.on('callback_query', async (query) => {
     return;
   }
 
+  if (data === 'set_mobile') {
+  sessions[chatId] = { step: 'update_mobile' };
+
+  await send(
+    chatId,
+    '📱 *Update Mobile Number*\n\nEnter your new mobile number:'
+  );
+
+  return;
+  }
+
   if (data === 'set_bank') {
     sessions[chatId] = { step: 'update_bank_ac' };
     await send(chatId, `🏦 *Update Bank Account*\n\nEnter your *Account Number*:`);
@@ -230,6 +241,32 @@ bot.on('message', async (msg) => {
   await send(
     chatId,
     '✅ Registration completed',
+    MAIN_MENU
+  );
+
+  return;
+  }
+
+  if (session?.step === 'update_mobile') {
+
+  if (!/^[6-9]\d{9}$/.test(text)) {
+    await send(
+      chatId,
+      '❌ Enter valid 10 digit mobile number'
+    );
+    return;
+  }
+
+  await db.query(
+    'UPDATE users SET mobile=? WHERE whatsapp_number=?',
+    [text, String(chatId)]
+  );
+
+  delete sessions[chatId];
+
+  await send(
+    chatId,
+    '✅ Mobile number updated successfully',
     MAIN_MENU
   );
 
@@ -755,14 +792,29 @@ async function handleHelp(chatId) {
 // ── SETTINGS ──────────────────────────────────────
 async function handleSettings(chatId, user) {
   const freshUser = await getUser(String(chatId));
-  await bot.sendMessage(chatId,
-    `⚙️ *Settings*\n━━━━━━━━━━━━━━━━\n\n👤 Name: *${freshUser.name}*\n💳 UPI: *${freshUser.upi_id || '—'}*\n\nWhat would you like to update?`,
-    { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [
-      [{ text: '👤 Change Name',        callback_data: 'set_name' }],
-      [{ text: '📱 Update UPI ID',       callback_data: 'set_upi'  }],
-      [{ text: '🏦 Update Bank Account', callback_data: 'set_bank' }],
-    ]}}
-  );
-}
+  await bot.sendMessage(
+  chatId,
+  `⚙️ *ACCOUNT SETTINGS*\n` +
+  `━━━━━━━━━━━━━━━━━━\n\n` +
+
+  `👤 Name : *${freshUser.name || 'Not Set'}*\n` +
+  `📱 Mobile : *${freshUser.mobile || 'Not Set'}*\n` +
+  `🏦 Bank A/C : *${freshUser.bank_account || 'Not Set'}*\n` +
+  `💳 UPI ID : *${freshUser.upi_id || 'Not Set'}*\n\n` +
+
+  `━━━━━━━━━━━━━━━━━━\n` +
+  `Choose option below to update 👇`,
+  {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '👤 Update Name', callback_data: 'set_name' }],
+        [{ text: '📱 Update Mobile', callback_data: 'set_mobile' }],
+        [{ text: '💳 Update UPI ID', callback_data: 'set_upi' }],
+        [{ text: '🏦 Update Bank Account', callback_data: 'set_bank' }]
+      ]
+    }
+  }
+);
 
 module.exports = { bot, sessions };
