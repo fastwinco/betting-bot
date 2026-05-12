@@ -114,7 +114,7 @@ router.post('/deposits/:id/reject', authCheck, async (req, res) => {
       const { getSock } = require('../../bot/index');
       const sock = getSock();
       if (sock) {
-        await sock.sendMessage(`${deps[0].whatsapp_number}@s.whatsapp.net`, {
+        await sock.sendMessage(`${deps[0].telegram_id}@s.whatsapp.net`, {
           text: `❌ *Deposit Rejected*\n\nAmount: Rs. ${deps[0].amount}\nReason: ${reason || 'Invalid'}\n\nSupport se contact karo.`
         });
       }
@@ -129,7 +129,7 @@ router.post('/deposits/:id/reject', authCheck, async (req, res) => {
 router.get('/withdrawals/pending', authCheck, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT w.*, u.name, u.whatsapp_number FROM withdrawals w
+      `SELECT w.*, u.name, u.telegram_id FROM withdrawals w
        JOIN users u ON w.user_id = u.id
        WHERE w.status = 'pending' ORDER BY w.created_at DESC`
     );
@@ -151,7 +151,7 @@ router.post('/withdrawals/:id/pay', authCheck, async (req, res) => {
       const { getSock } = require('../../bot/index');
       const sock = getSock();
       if (sock) {
-        await sock.sendMessage(`${wds[0].whatsapp_number}@s.whatsapp.net`, {
+        await sock.sendMessage(`${wds[0].telegram_id}@s.whatsapp.net`, {
           text: `✅ *Withdrawal Paid!*\n━━━━━━━━━━━━━━━━━━\n\n💰 Amount: *Rs. ${wds[0].amount}*\n📱 UPI: ${wds[0].upi_id}\n🔢 UTR: ${utr}\n\n_Paisa mil gaya? Confirm karo_ 🙏`
         });
       }
@@ -160,7 +160,7 @@ router.post('/withdrawals/:id/pay', authCheck, async (req, res) => {
 try {
   const { bot } = require('../../bot/index');
   if (bot) {
-    await bot.sendMessage(wds[0].whatsapp_number,
+    await bot.sendMessage(wds[0].telegram_id,
       `✅ *Withdrawal Paid!*\n━━━━━━━━━━━━━━━━\n\n` +
       `💰 Amount: *Rs. ${wds[0].amount}*\n` +
       `📱 UPI: ${wds[0].upi_id}\n` +
@@ -189,7 +189,7 @@ router.post('/withdrawals/:id/reject', authCheck, async (req, res) => {
       const { getSock } = require('../../bot/index');
       const sock = getSock();
       if (sock) {
-        await sock.sendMessage(`${wds[0].whatsapp_number}@s.whatsapp.net`, {
+        await sock.sendMessage(`${wds[0].telegram_id}@s.whatsapp.net`, {
           text: `❌ *Withdrawal Rejected*\n\nAmount: Rs. ${wds[0].amount}\nReason: ${reason || 'Rejected'}\n\nAmount wapas wallet mein add ho gaya.`
         });
       }
