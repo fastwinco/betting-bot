@@ -39,11 +39,25 @@ bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const user   = await getUser(String(chatId));
   if (user) {
-    await send(chatId,
-      `⚡ *Welcome back, ${user.name}!*\n\n💰 Balance: *Rs. ${user.wallet_balance}*`,
-      MAIN_MENU
+
+  if (!user.mobile) {
+    sessions[chatId] = { step: 'register_mobile' };
+
+    await send(
+      chatId,
+      '📱 Please enter your mobile number'
     );
+
     return;
+  }
+
+  await send(
+    chatId,
+    `⚡ *Welcome back, ${user.name}!*\n\n💰 Balance: *Rs.${user.wallet_balance}*`,
+    MAIN_MENU
+  );
+
+  return;
   }
   sessions[chatId] = { step: 'ask_name' };
   await send(chatId, `⚡ *Welcome to FastWin!*\n\nPlease enter your *full name* to register:`);
@@ -194,6 +208,34 @@ bot.on('message', async (msg) => {
   const user    = await getUser(String(chatId));
   const session = sessions[chatId];
 
+  if (session?.step === 'register_mobile') {
+
+  const mobile = text.trim();
+
+  if (!/^[6-9]\d{9}$/.test(mobile)) {
+    await send(
+      chatId,
+      '❌ Enter valid 10 digit mobile number'
+    );
+    return;
+  }
+
+  await db.query(
+    'UPDATE users SET mobile=? WHERE whatsapp_number=?',
+    [mobile, String(chatId)]
+  );
+
+  delete sessions[chatId];
+
+  await send(
+    chatId,
+    '✅ Registration completed',
+    MAIN_MENU
+  );
+
+  return;
+  }
+  
   if (session?.step === 'ask_name') {
     if (text.length < 2) { await send(chatId, '❌ Enter a valid name.'); return; }
     sessions[chatId] = { step: 'ask_upi', name: text };
