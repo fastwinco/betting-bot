@@ -311,6 +311,7 @@ if (openPana && (!closePana || closePana === ''))
   });
 }
 
+}
 // CLOSE RESULT
 const [rows] = await db.query(
   `SELECT result_open_pana, result_single
