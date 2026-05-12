@@ -283,7 +283,7 @@ bot.on('message', async (msg) => {
   if (session?.step === 'ask_upi') {
     if (!text.includes('@')) { await send(chatId, '❌ Invalid UPI ID.\nExample: name@ybl'); return; }
     await db.query(
-      `INSERT INTO users (whatsapp_number, name, upi_id, wallet_balance, status, registered_at) VALUES (?, ?, ?, 0, 'active', NOW())`,
+      `INSERT INTO users (telegram_id, name, upi_id, wallet_balance, status, registered_at) VALUES (?, ?, ?, 0, 'active', NOW())`,
       [String(chatId), session.name, text.toLowerCase()]
     );
     sessions[chatId] = { step: 'register_mobile' };
