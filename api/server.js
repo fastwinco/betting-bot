@@ -31,13 +31,40 @@ cron.schedule('* * * * *', async () => {
     const now = new Date();
     const hh  = String(now.getHours()).padStart(2,'0');
     const mm  = String(now.getMinutes()).padStart(2,'0');
-    const timeStr = `${hh}:${mm}`;
+    const timeStr = `${hh}:${mm}:00`;
 
+    // Open time aane par market open karo
+    await db.query(
+      `UPDATE markets SET status = 'open'
+       WHERE status = 'closed'
+       AND open_time <= ? AND close_time > ?`,
+      [timeStr, timeStr]
+    );
+
+    // Close time aane par market band karo
     await db.query(
       `UPDATE markets SET status = 'closed'
-       WHERE status = 'open' AND close_time <= ?`,
+       WHERE status = 'open'
+       AND close_time <= ?`,
       [timeStr]
     );
+
+    // Raat 12 baje — resulted markets reset karo agle din ke liye
+    if (hh === '00' && mm === '00') {
+      await db.query(
+        `UPDATE markets SET
+          status = 'open',
+          result_single = NULL,
+          result_jodi = NULL,
+          result_open_pana = NULL,
+          result_close_pana = NULL,
+          resulted_at = NULL,
+          pdf_generated = 0
+         WHERE status = 'resulted'`
+      );
+      console.log('✅ Markets reset for new day');
+    }
+
   } catch (err) {
     console.error('Cron error:', err.message);
   }
