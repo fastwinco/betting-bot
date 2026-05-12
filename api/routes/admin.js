@@ -144,7 +144,7 @@ router.post('/withdrawals/:id/pay', authCheck, async (req, res) => {
   try {
     const { id } = req.params;
     const { utr } = req.body;
-    const [wds] = await db.query(`SELECT w.*, u.whatsapp_number FROM withdrawals w JOIN users u ON w.user_id = u.id WHERE w.id=?`, [id]);
+    const [wds] = await db.query(`SELECT w.*, u.telegram_id FROM withdrawals w JOIN users u ON w.user_id = u.id WHERE w.id=?`, [id]);
     if (!wds.length) return res.status(404).json({ error: 'Not found' });
     await db.query(`UPDATE withdrawals SET status='paid', utr_number=?, paid_at=NOW() WHERE id=?`, [utr, id]);
     try {
@@ -181,7 +181,7 @@ router.post('/withdrawals/:id/reject', authCheck, async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    const [wds] = await db.query(`SELECT w.*, u.whatsapp_number FROM withdrawals w JOIN users u ON w.user_id = u.id WHERE w.id=?`, [id]);
+    const [wds] = await db.query(`SELECT w.*, u.telegram_id FROM withdrawals w JOIN users u ON w.user_id = u.id WHERE w.id=?`, [id]);
     if (!wds.length) return res.status(404).json({ error: 'Not found' });
     await db.query('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?', [wds[0].amount, wds[0].user_id]);
     await db.query(`UPDATE withdrawals SET status='rejected', admin_note=? WHERE id=?`, [reason || 'Rejected', id]);
@@ -204,7 +204,7 @@ router.post('/withdrawals/:id/reject', authCheck, async (req, res) => {
 router.get('/users', authCheck, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT id, name, whatsapp_number, upi_id, wallet_balance, status, registered_at
+      `SELECT id, name, telegram_id, upi_id, wallet_balance, status, registered_at
        FROM users ORDER BY registered_at DESC`
     );
     res.json(rows);
@@ -388,7 +388,7 @@ ${savedOpenPana}-${jodi}-${closePana}
   }
 
   const [users] = await db.query(
-    'SELECT whatsapp_number FROM users WHERE status="active"'
+    'SELECT telegram_id FROM users WHERE status="active"'
   );
 
   for (const u of users) {
@@ -396,7 +396,7 @@ ${savedOpenPana}-${jodi}-${closePana}
     try {
 
       await bot.sendMessage(
-        u.whatsapp_number,
+        u.telegram_id,
         msg,
         { parse_mode: 'Markdown' }
       );
