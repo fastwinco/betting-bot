@@ -286,12 +286,14 @@ bot.on('message', async (msg) => {
       `INSERT INTO users (whatsapp_number, name, upi_id, wallet_balance, status, registered_at) VALUES (?, ?, ?, 0, 'active', NOW())`,
       [String(chatId), session.name, text.toLowerCase()]
     );
-    delete sessions[chatId];
-    await send(chatId,
-      `🎉 *Registration Complete!*\n\n👤 Name: *${session.name}*\n💳 UPI: *${text.toLowerCase()}*\n💰 Balance: *Rs. 0*`,
-      MAIN_MENU
-    );
-    return;
+    sessions[chatId] = { step: 'register_mobile' };
+
+await send(
+  chatId,
+  '📱 Please enter your mobile number:'
+);
+
+return;
   }
 
   if (!user && !session) {
@@ -505,7 +507,7 @@ async function handleStep(chatId, user, text, session) {
     const bankName = text.trim();
     if (bankName.length < 2) { await send(chatId, '❌ Enter valid bank name:'); return; }
     const bankInfo = `${bankName}|${session.ac}|${session.ifsc}`;
-    await db.query('UPDATE users SET upi_id = ? WHERE whatsapp_number = ?', [bankInfo, String(chatId)]);
+    await db.query('UPDATE users SET bank_account = ? WHERE whatsapp_number = ?', [bankInfo, String(chatId)]);
     delete sessions[chatId];
     await send(chatId,
       `✅ *Bank Account Updated!*\n━━━━━━━━━━━━━━━━\n\n🏦 Bank: *${bankName}*\n💳 AC: *${session.ac}*\n📋 IFSC: *${session.ifsc}*`,
