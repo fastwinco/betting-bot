@@ -103,9 +103,6 @@ if (closePana) resultStr += `-${closePana}`;
 const msg =
   `🎲 *${market[0].name}*\n` +
   `*${resultStr}*\n━━━━━━━━━━━━━━━━\n\n` +
-  (openPana  ? `*OPEN* — Pana: *${openPana}* | Ank: *${openAnk}*\n` : '') +
-  (jodi      ? `*JODI: ${jodi}*\n` : '') +
-  (closePana ? `*CLOSE* — Pana: *${closePana}* | Ank: *${closeAnk}*\n` : '') +
   `\n🎯 Place your next bet!`;
 
       for (const u of allUsers) {
