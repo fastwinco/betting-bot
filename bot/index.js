@@ -96,9 +96,9 @@ bot.on('callback_query', async (query) => {
     minute:'2-digit'
   });
 
-const nowInt   = parseInt(now.replace(':',''));
-const openInt  = parseInt(market.open_time.replace(':',''));
-const closeInt = parseInt(market.close_time.replace(':',''));
+const nowInt   = parseInt(now.replace(':', ''));
+const openInt  = parseInt(market.open_time.replace(':', ''));
+const closeInt = parseInt(market.close_time.replace(':', ''));
 const startInt = 600;
 
 if (nowInt < startInt) {
@@ -111,25 +111,20 @@ if (nowInt >= closeInt) {
   return;
 }
 
+// ✅ Only ONE declaration of isClose
 const isClose = nowInt >= openInt && nowInt < closeInt;
 
-  const isClose =
-parseInt(now.replace(':','')) >=
-parseInt(market.open_time.replace(':','')) &&
+sessions[chatId] = {
+  step: 'play_enter_bets',
+  market
+};
 
-parseInt(now.replace(':','')) <
-parseInt(market.close_time.replace(':',''));
+await send(
+  chatId,
+  `✅ *${market.name}*\n━━━━━━━━━━\n\n` +
+  `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting Open'}\n\nEnter bets:`
+);
 
-  sessions[chatId] = {
-    step: 'play_enter_bets',
-    market
-  };
-
-  await send(
-    chatId,
-    `✅ *${market.name}*\n━━━━━━━━━━\n\n` +
-    `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting Open'}\n\nEnter bets:`
-  );
 
   return;
 }
