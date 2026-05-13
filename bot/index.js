@@ -723,26 +723,31 @@ async function handleTransaction(chatId, user) {
 
 // ── ADD MONEY ─────────────────────────────────────
 async function handleAddMoney(chatId, user) {
+
   const QRCode = require('qrcode');
+
   sessions[chatId] = { step: 'deposit_amount' };
+
   const upiLink =
 `upi://pay?pa=${process.env.UPI_ID}&pn=FASTWIN&am=0&cu=INR`;
 
-const qrImage = await QRCode.toDataURL(upiLink);
+  const qrBuffer = await QRCode.toBuffer(upiLink);
 
-await bot.sendPhoto(
-  chatId,
-  qrImage,
-  {
-    caption:
+  await bot.sendPhoto(
+    chatId,
+    qrBuffer,
+    {
+      caption:
 `➕ *Add Money*
 
 📲 Scan QR & Pay
 
+💳 UPI ID: \`${process.env.UPI_ID}\`
+
 🧾 After payment send amount and UTR number.`,
-    parse_mode: 'Markdown'
-  }
-);
+      parse_mode: 'Markdown'
+    }
+  );
 }
 
 // ── GAME RATE ─────────────────────────────────────
