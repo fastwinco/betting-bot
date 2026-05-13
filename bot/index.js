@@ -379,21 +379,27 @@ async function handleStep(chatId, user, text, session) {
     const upiLink = `upi://pay?pa=${adminUPI}&pn=${encodeURIComponent(adminName)}&am=${amount}&cu=INR&tn=FastWin`;
     sessions[chatId] = { step: 'await_utr', depositAmount: amount };
 
-    let msg =
-      `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
-      `📱 UPI: \`${adminUPI}\`\n` +
-      `💰 Amount: *Rs. ${amount}*\n`;
-    if (bankMethods.length) {
-      msg += `\n🏦 *Bank Transfer:*\n`;
-      bankMethods.forEach(b => { msg += `• *${b.name}*\n  ${b.extra || ''}\n  Holder: ${b.value}\n`; });
-    }
-    msg += `\n━━━━━━━━━━━━━━━━\nAfter payment enter *UTR number*:`;
+    const QRCode = require('qrcode');
 
-    await bot.sendMessage(chatId, msg, {
-      parse_mode: 'Markdown',
-      reply_markup: { inline_keyboard: [[{ text: `💳 Pay Rs. ${amount} — Tap Here`, url: upiLink }]] }
-    });
-    return;
+const qrBuffer = await QRCode.toBuffer(upiLink);
+
+await bot.sendPhoto(
+  chatId,
+  qrBuffer,
+  {
+    caption:
+`💰 *Pay Rs. ${amount}*
+
+📲 Scan QR & Pay
+
+💳 UPI ID: \`${adminUPI}\`
+
+🧾 After payment send UTR number.`,
+    parse_mode: 'Markdown'
+  }
+);
+
+return;
   }
 
   if (session.step === 'await_utr') {
@@ -724,29 +730,11 @@ async function handleTransaction(chatId, user) {
 // ── ADD MONEY ─────────────────────────────────────
 async function handleAddMoney(chatId, user) {
 
-  const QRCode = require('qrcode');
-
   sessions[chatId] = { step: 'deposit_amount' };
 
-  const upiLink =
-`upi://pay?pa=${process.env.UPI_ID}&pn=FASTWIN&am=0&cu=INR`;
-
-  const qrBuffer = await QRCode.toBuffer(upiLink);
-
-  await bot.sendPhoto(
+  await send(
     chatId,
-    qrBuffer,
-    {
-      caption:
-`➕ *Add Money*
-
-📲 Scan QR & Pay
-
-💳 UPI ID: \`${process.env.UPI_ID}\`
-
-🧾 After payment send amount and UTR number.`,
-      parse_mode: 'Markdown'
-    }
+    `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\nMin: Rs. ${process.env.MIN_DEPOSIT || 100}\nMax: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\nEnter amount:`
   );
 }
 
