@@ -97,11 +97,11 @@ bot.on('callback_query', async (query) => {
   });
 
   if (
-  now >= market.close_time
+  now >= market.result_time
 ) {
-    await send(chatId, '❌ Market closed.');
-    return;
-  }
+  await send(chatId, '❌ Market closed.');
+  return;
+}
 
   const isClose =
   now >= market.open_time &&
@@ -367,7 +367,7 @@ async function handlePlay(chatId, user) {
   });
 
   const activeMarkets = markets.filter(m =>
-  now < m.close_time
+  now < m.result_time
 );
 
   if (!activeMarkets.length) {
