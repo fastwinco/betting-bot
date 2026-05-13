@@ -21,6 +21,13 @@ async function getUser(telegramId) {
   return rows[0] || null;
 }
 
+function getISTTimeInt() {
+  const now = new Date().toLocaleTimeString('en-IN', {
+    hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata'
+  });
+  return parseInt(now.replace(':', ''));
+}
+
 const MAIN_MENU = {
   reply_markup: {
     keyboard: [
@@ -360,60 +367,35 @@ return;
 
 // ── PLAY ──────────────────────────────────────────
 async function handlePlay(chatId, user) {
+  const [markets] = await db.query(`SELECT * FROM markets ORDER BY open_time`);
+  const nowInt = getISTTimeInt(); // Step 1 wala function yahan kaam aayega
+  const startInt = 600; // 06:00 AM
 
-  const [markets] = await db.query(
-    `SELECT * FROM markets ORDER BY open_time`
-  );
-
-  const now =
-  new Date().toLocaleTimeString(
-  'en-IN',
-  {
-    hour12:false,
-    hour:'2-digit',
-    minute:'2-digit'
+  const activeMarkets = markets.filter(m => {
+    const closeInt = parseInt(m.close_time.replace(':', ''));
+    return nowInt >= startInt && nowInt < closeInt;
   });
 
-  const OPEN_BET_START = '06:00';
-
-const activeMarkets = markets.filter(m => {
-  const nowInt       = parseInt(now.replace(':',''));
-  const closeInt     = parseInt(m.close_time.replace(':',''));
-  const startInt     = parseInt(OPEN_BET_START.replace(':',''));
-  return nowInt >= startInt && nowInt < closeInt;
-});
   if (!activeMarkets.length) {
     await send(chatId, '⏰ No markets open right now.');
     return;
   }
 
   const buttons = activeMarkets.map(m => {
-
-    const isClose =
-parseInt(now.replace(':','')) >=
-parseInt(m.open_time.replace(':','')) &&
-
-parseInt(now.replace(':','')) <
-parseInt(m.close_time.replace(':',''));
-
-    return [{
-      text:
-      `${isClose ? '🟡' : '🟢'} ${m.name}`,
-      callback_data: `market_${m.id}`
+    const isClose = nowInt >= parseInt(m.open_time.replace(':', ''));
+    // Agar open_time nikal gaya to Peela (🟡) button, warna Hara (🟢)
+    return [{ 
+      text: `${isClose ? '🟡' : '🟢'} ${m.name}`, 
+      callback_data: `market_${m.id}` 
     }];
   });
 
-  await bot.sendMessage(
-    chatId,
-    `🎮 *Select Market:*`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: buttons
-      }
-    }
-  );
+  await bot.sendMessage(chatId, `🎮 *Select Market:*`, {
+    parse_mode: 'Markdown',
+    reply_markup: { inline_keyboard: buttons }
+  });
 }
+
 
 // ── STEP HANDLER ──────────────────────────────────
 async function handleStep(chatId, user, text, session) {
@@ -677,51 +659,39 @@ let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━�
 }
 
 function detectBetType(number, market) {
-function detectBetType(number, market) {
-  // 1. Get Current Time in HHmm format (e.g., 14:30 -> 1430)
-  const now = new Date().toLocaleTimeString('en-IN', {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Kolkata' // Ensure IST
-  });
-
-  const nowInt    = parseInt(now.replace(':', ''));
-  const openInt   = parseInt(market.open_time.replace(':', ''));
-  const closeInt  = parseInt(market.close_time.replace(':', ''));
-  const startInt  = 600; // 06:00 AM
-
-  // 2. Define Status
-  const isOpenBetting  = nowInt >= startInt && nowInt < openInt;
+  const nowInt = getISTTimeInt(); // Humara banaya hua helper function
+  const openInt = parseInt(market.open_time.replace(':', ''));
+  const closeInt = parseInt(market.close_time.replace(':', ''));
+  
+  // Timing rules
   const isCloseBetting = nowInt >= openInt && nowInt < closeInt;
+  const isOpenBetting = nowInt >= 600 && nowInt < openInt;
 
   if (!isOpenBetting && !isCloseBetting) return null;
 
   const len = number.length;
 
-  // 3. Betting Rules based on Timing
+  // 1 Digit: Single (Open ya Close)
   if (len === 1) {
-    // Single: Agar open time nikal gaya to Close Single, warna Open Single
     return isCloseBetting 
       ? { key: 'close_single', label: 'Close Single', multiplier: 9 } 
       : { key: 'open_single', label: 'Open Single', multiplier: 9 };
   }
 
+  // 2 Digit: Jodi (Sirf Open time tak allow hai)
   if (len === 2) {
-    // Jodi: Sirf Open timing ke dauran allow hoti hai
     if (isCloseBetting) return null; 
     return { key: 'jodi', label: 'Jodi', multiplier: 90 };
   }
 
+  // 3 Digit: Pana (Open ya Close)
   if (len === 3) {
-    // Pana/Panel logic
     const isTriple = /^(\d)\1\1$/.test(number);
     const mult = isTriple ? 1000 : (isCloseBetting ? 300 : 150);
-    const labelPrefix = isCloseBetting ? 'Close' : 'Open';
-    
+    const side = isCloseBetting ? 'Close' : 'Open';
     return { 
       key: isCloseBetting ? 'close_pana' : 'open_pana', 
-      label: `${labelPrefix} ${isTriple ? 'Triple ' : '' }Pana`, 
+      label: `${side} ${isTriple ? 'Triple ' : ''}Pana`, 
       multiplier: mult 
     };
   }
