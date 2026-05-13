@@ -72,31 +72,55 @@ bot.on('callback_query', async (query) => {
   if (!user) { await send(chatId, '⚠️ Please register first. Send /start'); return; }
 
   if (data.startsWith('market_')) {
-    const marketId = parseInt(data.replace('market_', ''));
-    const [markets] = await db.query(
-      `SELECT * FROM markets WHERE id = ? AND status IN ('open','open_resulted')`, [marketId]
-    );
-    if (!markets.length) { await send(chatId, '❌ Market not available.'); return; }
-    const market  = markets[0];
-    const now =
-new Date().toLocaleTimeString(
-'en-IN',
-{
-  hour12:false,
-  hour:'2-digit',
-  minute:'2-digit'
-});
 
-const isClose =
-now >= market.close_time &&
-now < market.result_time;
-    sessions[chatId] = { step: 'play_enter_bets', market };
-    await send(chatId,
-      `✅ *${market.name}*\n━━━━━━━━━━━━━━━━\n\n` +
-      `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting'}\n\nEnter bets:`
-    );
+  const marketId = parseInt(data.replace('market_', ''));
+
+  const [markets] = await db.query(
+    'SELECT * FROM markets WHERE id = ?',
+    [marketId]
+  );
+
+  if (!markets.length) {
+    await send(chatId, '❌ Market not available.');
     return;
   }
+
+  const market = markets[0];
+
+  const now =
+  new Date().toLocaleTimeString(
+  'en-IN',
+  {
+    hour12:false,
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+
+  if (
+    now < market.open_time ||
+    now >= market.result_time
+  ) {
+    await send(chatId, '❌ Market closed.');
+    return;
+  }
+
+  const isClose =
+  now >= market.close_time &&
+  now < market.result_time;
+
+  sessions[chatId] = {
+    step: 'play_enter_bets',
+    market
+  };
+
+  await send(
+    chatId,
+    `✅ *${market.name}*\n━━━━━━━━━━\n\n` +
+    `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting Open'}\n\nEnter bets:`
+  );
+
+  return;
+}
 
   if (data.startsWith('history_')) {
     const marketId = parseInt(data.replace('history_', ''));
@@ -329,18 +353,53 @@ return;
 
 // ── PLAY ──────────────────────────────────────────
 async function handlePlay(chatId, user) {
+
   const [markets] = await db.query(
-    `SELECT * FROM markets WHERE status IN ('open','open_resulted') ORDER BY open_time`
+    `SELECT * FROM markets ORDER BY open_time`
   );
-  if (!markets.length) { await send(chatId, '⏰ No markets open right now.'); return; }
-  const buttons = markets.map(m => ([{
-    text: `${m.status === 'open' ? '🟢' : '🟡'} ${m.name}`,
-    callback_data: `market_${m.id}`
-  }]));
-  await bot.sendMessage(chatId, `🎮 *Select Market:*`, {
-    parse_mode: 'Markdown',
-    reply_markup: { inline_keyboard: buttons }
+
+  const now =
+  new Date().toLocaleTimeString(
+  'en-IN',
+  {
+    hour12:false,
+    hour:'2-digit',
+    minute:'2-digit'
   });
+
+  const activeMarkets = markets.filter(m =>
+    now >= m.open_time &&
+    now < m.result_time
+  );
+
+  if (!activeMarkets.length) {
+    await send(chatId, '⏰ No markets open right now.');
+    return;
+  }
+
+  const buttons = activeMarkets.map(m => {
+
+    const isClose =
+    now >= m.close_time &&
+    now < m.result_time;
+
+    return [{
+      text:
+      `${isClose ? '🟡' : '🟢'} ${m.name}`,
+      callback_data: `market_${m.id}`
+    }];
+  });
+
+  await bot.sendMessage(
+    chatId,
+    `🎮 *Select Market:*`,
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: buttons
+      }
+    }
+  );
 }
 
 // ── STEP HANDLER ──────────────────────────────────
