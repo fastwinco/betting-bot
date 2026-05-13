@@ -105,8 +105,8 @@ bot.on('callback_query', async (query) => {
   }
 
   const isClose =
-  now >= market.close_time &&
-  now < market.result_time;
+  now >= market.open_time &&
+  now < market.close_time;
 
   sessions[chatId] = {
     step: 'play_enter_bets',
@@ -674,8 +674,8 @@ new Date().toLocaleTimeString(
 });
 
 const isClose =
-now >= market.close_time &&
-now < market.result_time;
+now >= market.open_time &&
+now < market.close_time;
   const len     = number.length;
   if (len === 1) return isClose ? { key:'close_single',label:'Close Single',multiplier:9 } : { key:'open_single',label:'Open Single',multiplier:9 };
   if (len === 2) { if (isClose) return null; return { key:'jodi',label:'Jodi',multiplier:90 }; }
