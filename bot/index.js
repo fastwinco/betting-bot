@@ -677,31 +677,55 @@ let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━�
 }
 
 function detectBetType(number, market) {
-  const now =
-new Date().toLocaleTimeString(
-'en-IN',
-{
-  hour12:false,
-  hour:'2-digit',
-  minute:'2-digit'
-});
+function detectBetType(number, market) {
+  // 1. Get Current Time in HHmm format (e.g., 14:30 -> 1430)
+  const now = new Date().toLocaleTimeString('en-IN', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata' // Ensure IST
+  });
 
-const nowInt      = parseInt(now.replace(':',''));
-const openInt     = parseInt(market.open_time.replace(':',''));
-const closeInt    = parseInt(market.close_time.replace(':',''));
-const startInt    = parseInt('0600');                            
+  const nowInt    = parseInt(now.replace(':', ''));
+  const openInt   = parseInt(market.open_time.replace(':', ''));
+  const closeInt  = parseInt(market.close_time.replace(':', ''));
+  const startInt  = 600; // 06:00 AM
 
-const isClose = nowInt >= openInt && nowInt < closeInt;
-const isOpen  = nowInt >= startInt && nowInt < openInt;
+  // 2. Define Status
+  const isOpenBetting  = nowInt >= startInt && nowInt < openInt;
+  const isCloseBetting = nowInt >= openInt && nowInt < closeInt;
 
-if (!isOpen && !isClose) return null;
-  const len     = number.length;
-  if (len === 1) return isClose ? { key:'close_single',label:'Close Single',multiplier:9 } : { key:'open_single',label:'Open Single',multiplier:9 };
-  if (len === 2) { if (isClose) return null; return { key:'jodi',label:'Jodi',multiplier:90 }; }
-  if (len === 3) {
-    if (/^(\d)\1\1$/.test(number)) return isClose ? { key:'close_pana',label:'Close Triple Pana',multiplier:1000 } : { key:'open_pana',label:'Open Triple Pana',multiplier:1000 };
-    return isClose ? { key:'close_pana',label:'Close Pana',multiplier:300 } : { key:'open_pana',label:'Open Pana',multiplier:150 };
+  if (!isOpenBetting && !isCloseBetting) return null;
+
+  const len = number.length;
+
+  // 3. Betting Rules based on Timing
+  if (len === 1) {
+    // Single: Agar open time nikal gaya to Close Single, warna Open Single
+    return isCloseBetting 
+      ? { key: 'close_single', label: 'Close Single', multiplier: 9 } 
+      : { key: 'open_single', label: 'Open Single', multiplier: 9 };
   }
+
+  if (len === 2) {
+    // Jodi: Sirf Open timing ke dauran allow hoti hai
+    if (isCloseBetting) return null; 
+    return { key: 'jodi', label: 'Jodi', multiplier: 90 };
+  }
+
+  if (len === 3) {
+    // Pana/Panel logic
+    const isTriple = /^(\d)\1\1$/.test(number);
+    const mult = isTriple ? 1000 : (isCloseBetting ? 300 : 150);
+    const labelPrefix = isCloseBetting ? 'Close' : 'Open';
+    
+    return { 
+      key: isCloseBetting ? 'close_pana' : 'open_pana', 
+      label: `${labelPrefix} ${isTriple ? 'Triple ' : '' }Pana`, 
+      multiplier: mult 
+    };
+  }
+
   return null;
 }
 
