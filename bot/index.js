@@ -97,9 +97,8 @@ bot.on('callback_query', async (query) => {
   });
 
   if (
-    now < market.open_time ||
-    now >= market.result_time
-  ) {
+  now >= market.close_time
+) {
     await send(chatId, '❌ Market closed.');
     return;
   }
@@ -368,9 +367,8 @@ async function handlePlay(chatId, user) {
   });
 
   const activeMarkets = markets.filter(m =>
-    now >= m.open_time &&
-    now < m.result_time
-  );
+  now < m.close_time
+);
 
   if (!activeMarkets.length) {
     await send(chatId, '⏰ No markets open right now.');
@@ -380,8 +378,8 @@ async function handlePlay(chatId, user) {
   const buttons = activeMarkets.map(m => {
 
     const isClose =
-    now >= m.close_time &&
-    now < m.result_time;
+    now >= m.open_time &&
+    now < m.close_time;
 
     return [{
       text:
