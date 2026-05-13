@@ -96,13 +96,22 @@ bot.on('callback_query', async (query) => {
     minute:'2-digit'
   });
 
-  if (
-  parseInt(now.replace(':','')) >=
-  parseInt(market.close_time.replace(':',''))
-) {
+const nowInt   = parseInt(now.replace(':',''));
+const openInt  = parseInt(market.open_time.replace(':',''));
+const closeInt = parseInt(market.close_time.replace(':',''));
+const startInt = 600;
+
+if (nowInt < startInt) {
+  await send(chatId, `⏰ Market 6:00 AM se khulega.`);
+  return;
+}
+
+if (nowInt >= closeInt) {
   await send(chatId, '❌ Market closed.');
   return;
 }
+
+const isClose = nowInt >= openInt && nowInt < closeInt;
 
   const isClose =
 parseInt(now.replace(':','')) >=
@@ -370,11 +379,14 @@ async function handlePlay(chatId, user) {
     minute:'2-digit'
   });
 
-  const activeMarkets = markets.filter(m =>
-  parseInt(now.replace(':','')) <
-  parseInt(m.close_time.replace(':',''))
-);
+  const OPEN_BET_START = '06:00';
 
+const activeMarkets = markets.filter(m => {
+  const nowInt       = parseInt(now.replace(':',''));
+  const closeInt     = parseInt(m.close_time.replace(':',''));
+  const startInt     = parseInt(OPEN_BET_START.replace(':',''));
+  return nowInt >= startInt && nowInt < closeInt;
+});
   if (!activeMarkets.length) {
     await send(chatId, '⏰ No markets open right now.');
     return;
@@ -679,9 +691,15 @@ new Date().toLocaleTimeString(
   minute:'2-digit'
 });
 
-const isClose =
-now >= market.open_time &&
-now < market.close_time;
+const nowInt      = parseInt(now.replace(':',''));
+const openInt     = parseInt(market.open_time.replace(':',''));
+const closeInt    = parseInt(market.close_time.replace(':',''));
+const startInt    = parseInt('0600');                            
+
+const isClose = nowInt >= openInt && nowInt < closeInt;
+const isOpen  = nowInt >= startInt && nowInt < openInt;
+
+if (!isOpen && !isClose) return null;
   const len     = number.length;
   if (len === 1) return isClose ? { key:'close_single',label:'Close Single',multiplier:9 } : { key:'open_single',label:'Open Single',multiplier:9 };
   if (len === 2) { if (isClose) return null; return { key:'jodi',label:'Jodi',multiplier:90 }; }
