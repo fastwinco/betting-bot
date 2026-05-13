@@ -78,7 +78,18 @@ bot.on('callback_query', async (query) => {
     );
     if (!markets.length) { await send(chatId, '❌ Market not available.'); return; }
     const market  = markets[0];
-    const isClose = market.status === 'open_resulted';
+    const now =
+new Date().toLocaleTimeString(
+'en-IN',
+{
+  hour12:false,
+  hour:'2-digit',
+  minute:'2-digit'
+});
+
+const isClose =
+now >= market.close_time &&
+now < market.result_time;
     sessions[chatId] = { step: 'play_enter_bets', market };
     await send(chatId,
       `✅ *${market.name}*\n━━━━━━━━━━━━━━━━\n\n` +
@@ -560,7 +571,7 @@ async function processBets(chatId, user, text, market) {
     const amount = parseFloat(match[2]);
     const MIN    = parseFloat(process.env.MIN_BET || 10);
     if (isNaN(amount) || amount < MIN) { errors.push(`❌ Min Rs.${MIN}: \`${line}\``); continue; }
-    const betType = detectBetType(number, market.status);
+    const betType = detectBetType(number, market);
     if (!betType) { errors.push(`❌ Invalid: \`${number}\``); continue; }
     bets.push({ number, amount, betType });
   }
@@ -593,8 +604,19 @@ let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━�
   });
 }
 
-function detectBetType(number, marketStatus) {
-  const isClose = marketStatus === 'open_resulted';
+function detectBetType(number, market) {
+  const now =
+new Date().toLocaleTimeString(
+'en-IN',
+{
+  hour12:false,
+  hour:'2-digit',
+  minute:'2-digit'
+});
+
+const isClose =
+now >= market.close_time &&
+now < market.result_time;
   const len     = number.length;
   if (len === 1) return isClose ? { key:'close_single',label:'Close Single',multiplier:9 } : { key:'open_single',label:'Open Single',multiplier:9 };
   if (len === 2) { if (isClose) return null; return { key:'jodi',label:'Jodi',multiplier:90 }; }
