@@ -97,15 +97,19 @@ bot.on('callback_query', async (query) => {
   });
 
   if (
-  now >= market.result_time
+  parseInt(now.replace(':','')) >=
+  parseInt(market.close_time.replace(':',''))
 ) {
   await send(chatId, '❌ Market closed.');
   return;
 }
 
   const isClose =
-  now >= market.open_time &&
-  now < market.close_time;
+parseInt(now.replace(':','')) >=
+parseInt(market.open_time.replace(':','')) &&
+
+parseInt(now.replace(':','')) <
+parseInt(market.close_time.replace(':',''));
 
   sessions[chatId] = {
     step: 'play_enter_bets',
@@ -367,7 +371,8 @@ async function handlePlay(chatId, user) {
   });
 
   const activeMarkets = markets.filter(m =>
-  now < m.result_time
+  parseInt(now.replace(':','')) <
+  parseInt(m.close_time.replace(':',''))
 );
 
   if (!activeMarkets.length) {
@@ -378,8 +383,11 @@ async function handlePlay(chatId, user) {
   const buttons = activeMarkets.map(m => {
 
     const isClose =
-    now >= m.open_time &&
-    now < m.close_time;
+parseInt(now.replace(':','')) >=
+parseInt(m.open_time.replace(':','')) &&
+
+parseInt(now.replace(':','')) <
+parseInt(m.close_time.replace(':',''));
 
     return [{
       text:
