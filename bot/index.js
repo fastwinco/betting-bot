@@ -94,43 +94,35 @@ bot.on('callback_query', async (query) => {
 
   const market = markets[0];
 
-  const now =
-  new Date().toLocaleTimeString(
-  'en-IN',
-  {
-    hour12:false,
-    hour:'2-digit',
-    minute:'2-digit'
-  });
+    const nowInt = getISTTimeInt(); // Step 1 wala helper function use karein
+  const openInt = parseInt(market.open_time.replace(':', ''));
+  const closeInt = parseInt(market.close_time.replace(':', ''));
+  const startInt = 600;
 
-const nowInt   = parseInt(now.replace(':', ''));
-const openInt  = parseInt(market.open_time.replace(':', ''));
-const closeInt = parseInt(market.close_time.replace(':', ''));
-const startInt = 600;
+  if (nowInt < startInt) {
+    await send(chatId, `⏰ Market 6:00 AM se khulega.`);
+    return;
+  }
 
-if (nowInt < startInt) {
-  await send(chatId, `⏰ Market 6:00 AM se khulega.`);
-  return;
-}
+  if (nowInt >= closeInt) {
+    await send(chatId, '❌ Market closed.');
+    return;
+  }
 
-if (nowInt >= closeInt) {
-  await send(chatId, '❌ Market closed.');
-  return;
-}
+  // ✅ Sahi condition: Open time ke barabar ya usse zyada matlab CLOSE
+  const isClose = nowInt >= openInt;
 
-// ✅ Only ONE declaration of isClose
-const isClose = nowInt >= openInt && nowInt < closeInt;
+  sessions[chatId] = {
+    step: 'play_enter_bets',
+    market
+  };
 
-sessions[chatId] = {
-  step: 'play_enter_bets',
-  market
-};
+  await send(
+    chatId,
+    `✅ *${market.name}*\n━━━━━━━━━━\n\n` +
+    `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting Open'}\n\nEnter bets:`
+  );
 
-await send(
-  chatId,
-  `✅ *${market.name}*\n━━━━━━━━━━\n\n` +
-  `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting Open'}\n\nEnter bets:`
-);
 
 
   return;
