@@ -15,7 +15,7 @@ async function send(chatId, text, opts = {}) {
 
 async function getUser(telegramId) {
   const [rows] = await db.query(
-    'SELECT * FROM users WHERE telegram_id = ? AND status = ?',
+    'SELECT * FROM users WHERE whatsapp_number = ? AND status = ?',
     [String(telegramId), 'active']
   );
   return rows[0] || null;
@@ -46,25 +46,16 @@ bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const user   = await getUser(String(chatId));
   if (user) {
-
-  if (!user.mobile) {
-    sessions[chatId] = { step: 'register_mobile' };
-
-    await send(
-      chatId,
-      '📱 Please enter your mobile number'
+    if (!user.mobile) {
+      sessions[chatId] = { step: 'register_mobile' };
+      await send(chatId, '📱 Please enter your mobile number');
+      return;
+    }
+    await send(chatId,
+      `⚡ *Welcome back, ${user.name}!*\n\n💰 Balance: *Rs.${user.wallet_balance}*`,
+      MAIN_MENU
     );
-
     return;
-  }
-
-  await send(
-    chatId,
-    `⚡ *Welcome back, ${user.name}!*\n\n💰 Balance: *Rs.${user.wallet_balance}*`,
-    MAIN_MENU
-  );
-
-  return;
   }
   sessions[chatId] = { step: 'ask_name' };
   await send(chatId, `⚡ *Welcome to FastWin!*\n\nPlease enter your *full name* to register:`);
@@ -79,54 +70,24 @@ bot.on('callback_query', async (query) => {
   if (!user) { await send(chatId, '⚠️ Please register first. Send /start'); return; }
 
   if (data.startsWith('market_')) {
-
-  const marketId = parseInt(data.replace('market_', ''));
-
-  const [markets] = await db.query(
-    'SELECT * FROM markets WHERE id = ?',
-    [marketId]
-  );
-
-  if (!markets.length) {
-    await send(chatId, '❌ Market not available.');
+    const marketId = parseInt(data.replace('market_', ''));
+    const [markets] = await db.query('SELECT * FROM markets WHERE id = ?', [marketId]);
+    if (!markets.length) { await send(chatId, '❌ Market not available.'); return; }
+    const market  = markets[0];
+    const nowInt  = getISTTimeInt();
+    const openInt = parseInt(market.open_time.replace(':', ''));
+    const closeInt = parseInt(market.close_time.replace(':', ''));
+    const startInt = 600;
+    if (nowInt < startInt) { await send(chatId, `⏰ Market 6:00 AM se khulega.`); return; }
+    if (nowInt >= closeInt) { await send(chatId, '❌ Market closed.'); return; }
+    const isClose = nowInt >= openInt;
+    sessions[chatId] = { step: 'play_enter_bets', market };
+    await send(chatId,
+      `✅ *${market.name}*\n━━━━━━━━━━\n\n` +
+      `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting Open'}\n\nEnter bets:`
+    );
     return;
   }
-
-  const market = markets[0];
-
-    const nowInt = getISTTimeInt(); // Step 1 wala helper function use karein
-  const openInt = parseInt(market.open_time.replace(':', ''));
-  const closeInt = parseInt(market.close_time.replace(':', ''));
-  const startInt = 600;
-
-  if (nowInt < startInt) {
-    await send(chatId, `⏰ Market 6:00 AM se khulega.`);
-    return;
-  }
-
-  if (nowInt >= closeInt) {
-    await send(chatId, '❌ Market closed.');
-    return;
-  }
-
-  // ✅ Sahi condition: Open time ke barabar ya usse zyada matlab CLOSE
-  const isClose = nowInt >= openInt;
-
-  sessions[chatId] = {
-    step: 'play_enter_bets',
-    market
-  };
-
-  await send(
-    chatId,
-    `✅ *${market.name}*\n━━━━━━━━━━\n\n` +
-    `${isClose ? '🟡 Close Betting Open' : '🟢 Open Betting Open'}\n\nEnter bets:`
-  );
-
-
-
-  return;
-}
 
   if (data.startsWith('history_')) {
     const marketId = parseInt(data.replace('history_', ''));
@@ -197,14 +158,9 @@ bot.on('callback_query', async (query) => {
   }
 
   if (data === 'set_mobile') {
-  sessions[chatId] = { step: 'update_mobile' };
-
-  await send(
-    chatId,
-    '📱 *Update Mobile Number*\n\nEnter your new mobile number:'
-  );
-
-  return;
+    sessions[chatId] = { step: 'update_mobile' };
+    await send(chatId, '📱 *Update Mobile Number*\n\nEnter your new mobile number:');
+    return;
   }
 
   if (data === 'set_bank') {
@@ -261,59 +217,28 @@ bot.on('message', async (msg) => {
   const session = sessions[chatId];
 
   if (session?.step === 'register_mobile') {
-
-  const mobile = text.trim();
-
-  if (!/^[6-9]\d{9}$/.test(mobile)) {
-    await send(
-      chatId,
-      '❌ Enter valid 10 digit mobile number'
-    );
+    const mobile = text.trim();
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      await send(chatId, '❌ Enter valid 10 digit mobile number');
+      return;
+    }
+    await db.query('UPDATE users SET mobile=? WHERE whatsapp_number=?', [mobile, String(chatId)]);
+    delete sessions[chatId];
+    await send(chatId, '✅ Registration completed', MAIN_MENU);
     return;
-  }
-
-  await db.query(
-    'UPDATE users SET mobile=? WHERE telegram_id=?',
-    [mobile, String(chatId)]
-  );
-
-  delete sessions[chatId];
-
-  await send(
-    chatId,
-    '✅ Registration completed',
-    MAIN_MENU
-  );
-
-  return;
   }
 
   if (session?.step === 'update_mobile') {
-
-  if (!/^[6-9]\d{9}$/.test(text)) {
-    await send(
-      chatId,
-      '❌ Enter valid 10 digit mobile number'
-    );
+    if (!/^[6-9]\d{9}$/.test(text)) {
+      await send(chatId, '❌ Enter valid 10 digit mobile number');
+      return;
+    }
+    await db.query('UPDATE users SET mobile=? WHERE whatsapp_number=?', [text, String(chatId)]);
+    delete sessions[chatId];
+    await send(chatId, '✅ Mobile number updated successfully', MAIN_MENU);
     return;
   }
 
-  await db.query(
-    'UPDATE users SET mobile=? WHERE telegram_id=?',
-    [text, String(chatId)]
-  );
-
-  delete sessions[chatId];
-
-  await send(
-    chatId,
-    '✅ Mobile number updated successfully',
-    MAIN_MENU
-  );
-
-  return;
-  }
-  
   if (session?.step === 'ask_name') {
     if (text.length < 2) { await send(chatId, '❌ Enter a valid name.'); return; }
     sessions[chatId] = { step: 'ask_upi', name: text };
@@ -324,17 +249,12 @@ bot.on('message', async (msg) => {
   if (session?.step === 'ask_upi') {
     if (!text.includes('@')) { await send(chatId, '❌ Invalid UPI ID.\nExample: name@ybl'); return; }
     await db.query(
-      `INSERT INTO users (telegram_id, name, upi_id, wallet_balance, status, registered_at) VALUES (?, ?, ?, 0, 'active', NOW())`,
+      `INSERT INTO users (whatsapp_number, name, upi_id, wallet_balance, status, registered_at) VALUES (?, ?, ?, 0, 'active', NOW())`,
       [String(chatId), session.name, text.toLowerCase()]
     );
     sessions[chatId] = { step: 'register_mobile' };
-
-await send(
-  chatId,
-  '📱 Please enter your mobile number:'
-);
-
-return;
+    await send(chatId, '📱 Please enter your mobile number:');
+    return;
   }
 
   if (!user && !session) {
@@ -360,8 +280,8 @@ return;
 // ── PLAY ──────────────────────────────────────────
 async function handlePlay(chatId, user) {
   const [markets] = await db.query(`SELECT * FROM markets ORDER BY open_time`);
-  const nowInt = getISTTimeInt(); // Step 1 wala function yahan kaam aayega
-  const startInt = 600; // 06:00 AM
+  const nowInt   = getISTTimeInt();
+  const startInt = 600;
 
   const activeMarkets = markets.filter(m => {
     const closeInt = parseInt(m.close_time.replace(':', ''));
@@ -375,11 +295,7 @@ async function handlePlay(chatId, user) {
 
   const buttons = activeMarkets.map(m => {
     const isClose = nowInt >= parseInt(m.open_time.replace(':', ''));
-    // Agar open_time nikal gaya to Peela (🟡) button, warna Hara (🟢)
-    return [{ 
-      text: `${isClose ? '🟡' : '🟢'} ${m.name}`, 
-      callback_data: `market_${m.id}` 
-    }];
+    return [{ text: `${isClose ? '🟡' : '🟢'} ${m.name}`, callback_data: `market_${m.id}` }];
   });
 
   await bot.sendMessage(chatId, `🎮 *Select Market:*`, {
@@ -387,7 +303,6 @@ async function handlePlay(chatId, user) {
     reply_markup: { inline_keyboard: buttons }
   });
 }
-
 
 // ── STEP HANDLER ──────────────────────────────────
 async function handleStep(chatId, user, text, session) {
@@ -437,26 +352,31 @@ async function handleStep(chatId, user, text, session) {
     sessions[chatId] = { step: 'await_utr', depositAmount: amount };
 
     const QRCode = require('qrcode');
+    const qrBuffer = await QRCode.toBuffer(upiLink);
 
-const qrBuffer = await QRCode.toBuffer(upiLink);
+    let caption =
+      `💰 *Pay Rs. ${amount}*\n━━━━━━━━━━━━━━━━\n\n` +
+      `📲 Scan QR & Pay\n\n` +
+      `💳 UPI ID: \`${adminUPI}\`\n` +
+      `💰 Amount: *Rs. ${amount}*\n`;
 
-await bot.sendPhoto(
-  chatId,
-  qrBuffer,
-  {
-    caption:
-`💰 *Pay Rs. ${amount}*
+    if (bankMethods.length) {
+      caption += `\n🏦 *Bank Transfer:*\n`;
+      bankMethods.forEach(b => {
+        caption += `• *${b.name}*\n  ${b.extra || ''}\n  Holder: ${b.value}\n`;
+      });
+    }
 
-📲 Scan QR & Pay
+    caption += `\n━━━━━━━━━━━━━━━━\n🧾 After payment enter *UTR number*:`;
 
-💳 UPI ID: \`${adminUPI}\`
-
-🧾 After payment send UTR number.`,
-    parse_mode: 'Markdown'
-  }
-);
-
-return;
+    await bot.sendPhoto(chatId, qrBuffer, {
+      caption,
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[{ text: `💳 Pay Rs. ${amount} via UPI`, url: upiLink }]]
+      }
+    });
+    return;
   }
 
   if (session.step === 'await_utr') {
@@ -532,11 +452,11 @@ return;
     return;
   }
 
-  // ── SETTINGS STEPS ────────────────────────────
+  // ── SETTINGS STEPS ─────────────────────────────
   if (session.step === 'update_name') {
     const name = text.trim();
     if (name.length < 2) { await send(chatId, '❌ Name too short. Enter valid name:'); return; }
-    await db.query('UPDATE users SET name = ? WHERE telegram_id = ?', [name, String(chatId)]);
+    await db.query('UPDATE users SET name = ? WHERE whatsapp_number = ?', [name, String(chatId)]);
     delete sessions[chatId];
     await send(chatId, `✅ *Name Updated!*\n\nNew Name: *${name}*`, MAIN_MENU);
     return;
@@ -545,7 +465,7 @@ return;
   if (session.step === 'update_upi') {
     const upi = text.trim().toLowerCase();
     if (!upi.includes('@')) { await send(chatId, '❌ Invalid UPI ID.\nExample: name@ybl'); return; }
-    await db.query('UPDATE users SET upi_id = ? WHERE telegram_id = ?', [upi, String(chatId)]);
+    await db.query('UPDATE users SET upi_id = ? WHERE whatsapp_number = ?', [upi, String(chatId)]);
     delete sessions[chatId];
     await send(chatId, `✅ *UPI Updated!*\n\nNew UPI: *${upi}*`, MAIN_MENU);
     return;
@@ -570,7 +490,7 @@ return;
     const bankName = text.trim();
     if (bankName.length < 2) { await send(chatId, '❌ Enter valid bank name:'); return; }
     const bankInfo = `${bankName}|${session.ac}|${session.ifsc}`;
-    await db.query('UPDATE users SET bank_account = ? WHERE telegram_id = ?', [bankInfo, String(chatId)]);
+    await db.query('UPDATE users SET bank_account = ? WHERE whatsapp_number = ?', [bankInfo, String(chatId)]);
     delete sessions[chatId];
     await send(chatId,
       `✅ *Bank Account Updated!*\n━━━━━━━━━━━━━━━━\n\n🏦 Bank: *${bankName}*\n💳 AC: *${session.ac}*\n📋 IFSC: *${session.ifsc}*`,
@@ -635,7 +555,7 @@ async function processBets(chatId, user, text, market) {
     return;
   }
 
-let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
+  let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━━\n\n`;
   bets.forEach(b => { msg += `${b.betType.label}: *${b.number}* → Rs. ${b.amount}\n`; });
   if (errors.length) msg += `\n⚠️ Skipped:\n${errors.join('\n')}\n`;
   msg += `\n💰 Total: *Rs. ${totalAmount}*\n💰 After: Rs. ${freshUser.wallet_balance - totalAmount}`;
@@ -651,43 +571,32 @@ let msg = `📋 *${market.name}*\n━━━━━━━━━━━━━━━�
 }
 
 function detectBetType(number, market) {
-  const nowInt = getISTTimeInt(); // Humara banaya hua helper function
-  const openInt = parseInt(market.open_time.replace(':', ''));
+  const nowInt   = getISTTimeInt();
+  const openInt  = parseInt(market.open_time.replace(':', ''));
   const closeInt = parseInt(market.close_time.replace(':', ''));
-  
-  // Timing rules
   const isCloseBetting = nowInt >= openInt && nowInt < closeInt;
-  const isOpenBetting = nowInt >= 600 && nowInt < openInt;
-
+  const isOpenBetting  = nowInt >= 600 && nowInt < openInt;
   if (!isOpenBetting && !isCloseBetting) return null;
-
   const len = number.length;
-
-  // 1 Digit: Single (Open ya Close)
   if (len === 1) {
-    return isCloseBetting 
-      ? { key: 'close_single', label: 'Close Single', multiplier: 9 } 
-      : { key: 'open_single', label: 'Open Single', multiplier: 9 };
+    return isCloseBetting
+      ? { key: 'close_single', label: 'Close Single', multiplier: 9 }
+      : { key: 'open_single',  label: 'Open Single',  multiplier: 9 };
   }
-
-  // 2 Digit: Jodi (Sirf Open time tak allow hai)
   if (len === 2) {
-    if (isCloseBetting) return null; 
+    if (isCloseBetting) return null;
     return { key: 'jodi', label: 'Jodi', multiplier: 90 };
   }
-
-  // 3 Digit: Pana (Open ya Close)
   if (len === 3) {
     const isTriple = /^(\d)\1\1$/.test(number);
     const mult = isTriple ? 1000 : (isCloseBetting ? 300 : 150);
     const side = isCloseBetting ? 'Close' : 'Open';
-    return { 
-      key: isCloseBetting ? 'close_pana' : 'open_pana', 
-      label: `${side} ${isTriple ? 'Triple ' : ''}Pana`, 
-      multiplier: mult 
+    return {
+      key: isCloseBetting ? 'close_pana' : 'open_pana',
+      label: `${side} ${isTriple ? 'Triple ' : ''}Pana`,
+      multiplier: mult
     };
   }
-
   return null;
 }
 
@@ -718,63 +627,24 @@ async function handleBetHistoryMarkets(chatId, user) {
 }
 
 async function showBetHistory(chatId, user, market) {
-
   const [bets] = await db.query(
-    `SELECT * FROM bets
-     WHERE user_id = ? AND market_id = ?
-     ORDER BY placed_at DESC`,
+    `SELECT * FROM bets WHERE user_id = ? AND market_id = ? ORDER BY placed_at DESC`,
     [user.id, market.id]
   );
-
   if (!bets.length) {
-    await send(
-      chatId,
-      `📜 *${market.name}*\n━━━━━━━━━━━━━━━━\n\nNo bets found.`,
-      MAIN_MENU
-    );
+    await send(chatId, `📜 *${market.name}*\n━━━━━━━━━━━━━━━━\n\nNo bets found.`, MAIN_MENU);
     return;
   }
-
   let msg = `📜 *${market.name}*\n━━━━━━━━━━━━━━━━`;
-
   let currentDate = '';
-
-  bets.forEach((b) => {
-
-    const betDate = new Date(b.placed_at).toLocaleDateString(
-      'en-IN',
-      {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      }
-    );
-
-    // Date heading
-    if (betDate !== currentDate) {
-      currentDate = betDate;
-      msg += `\n\n📅 *${betDate}*`;
-    }
-
-    let icon = '⏳';
-
-    if (b.status === 'won') {
-      icon = '✅';
-    } else if (b.status === 'lost') {
-      icon = '❌';
-    }
-
-    const type = b.bet_type
-      .replace(/_/g, ' ')
-      .toUpperCase();
-
+  bets.forEach(b => {
+    const betDate = new Date(b.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (betDate !== currentDate) { currentDate = betDate; msg += `\n\n📅 *${betDate}*`; }
+    const icon = b.status === 'won' ? '✅' : b.status === 'lost' ? '❌' : '⏳';
+    const type = b.bet_type.replace(/_/g, ' ').toUpperCase();
     msg += `\n${icon} ${type}: *${b.number}* → Rs. ${b.amount}`;
-
-    if (b.status === 'won' && b.actual_win) {
-      msg += ` *(Won Rs. ${b.actual_win})*`;
-    }
+    if (b.status === 'won' && b.actual_win) msg += ` *(Won Rs. ${b.actual_win})*`;
   });
-
   await send(chatId, msg, MAIN_MENU);
 }
 
@@ -815,38 +685,19 @@ async function handleTransaction(chatId, user) {
 
 // ── ADD MONEY ─────────────────────────────────────
 async function handleAddMoney(chatId, user) {
-
   sessions[chatId] = { step: 'deposit_amount' };
-
-  await send(
-    chatId,
+  await send(chatId,
     `➕ *Add Money*\n━━━━━━━━━━━━━━━━\n\nMin: Rs. ${process.env.MIN_DEPOSIT || 100}\nMax: Rs. ${process.env.MAX_DEPOSIT || 50000}\n\nEnter amount:`
   );
 }
 
 // ── GAME RATE ─────────────────────────────────────
 async function handleGameRate(chatId) {
-
-  let rates = {
-    open_single: 9,
-    open_pana: 150,
-    jodi: 90,
-    close_single: 9,
-    close_pana: 300,
-    triple_pana: 1000
-  };
-
+  let rates = { open_single:9, open_pana:150, jodi:90, close_single:9, close_pana:300, triple_pana:1000 };
   try {
-
-    const [rows] = await db.query(
-      `SELECT * FROM game_rates ORDER BY id DESC LIMIT 1`
-    );
-
+    const [rows] = await db.query(`SELECT * FROM game_rates ORDER BY id DESC LIMIT 1`);
     if (rows.length) {
-
       const row = rows[0];
-
-      // Map DB values properly
       rates.open_single  = parseFloat(row.open_single);
       rates.open_pana    = parseFloat(row.open_pana);
       rates.jodi         = parseFloat(row.jodi);
@@ -854,27 +705,19 @@ async function handleGameRate(chatId) {
       rates.close_pana   = parseFloat(row.close_pana);
       rates.triple_pana  = parseFloat(row.triple_pana);
     }
-
-  } catch (e) {
-    console.log('Game rate error:', e.message);
-  }
-
-  await send(
-  chatId,
-  `🎯 *FASTWIN GAME RATES*\n` +
-  `━━━━━━━━━━━━━━━━━━\n\n` +
-
-  `🔹 Open Single   ➜ *${rates.open_single}x*\n` +
-  `🔹 Open Pana     ➜ *${rates.open_pana}x*\n` +
-  `🔹 Jodi                ➜ *${rates.jodi}x*\n` +
-  `🔹 Close Single  ➜ *${rates.close_single}x*\n` +
-  `🔹 Close Pana    ➜ *${rates.close_pana}x*\n` +
-  `🔹 Triple Pana    ➜ *${rates.triple_pana}x*\n\n` +
-
-  `━━━━━━━━━━━━━━━━━━\n` +
-  `💰 *Rs.100 on Jodi = Rs.${rates.jodi * 100} Winning*`,
-  MAIN_MENU
-);
+  } catch (e) { console.log('Game rate error:', e.message); }
+  await send(chatId,
+    `🎯 *FASTWIN GAME RATES*\n━━━━━━━━━━━━━━━━━━\n\n` +
+    `🔹 Open Single   ➜ *${rates.open_single}x*\n` +
+    `🔹 Open Pana     ➜ *${rates.open_pana}x*\n` +
+    `🔹 Jodi          ➜ *${rates.jodi}x*\n` +
+    `🔹 Close Single  ➜ *${rates.close_single}x*\n` +
+    `🔹 Close Pana    ➜ *${rates.close_pana}x*\n` +
+    `🔹 Triple Pana   ➜ *${rates.triple_pana}x*\n\n` +
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `💰 *Rs.100 on Jodi = Rs.${rates.jodi * 100} Winning*`,
+    MAIN_MENU
+  );
 }
 
 // ── HELP ──────────────────────────────────────────
@@ -889,31 +732,20 @@ async function handleHelp(chatId) {
 // ── SETTINGS ──────────────────────────────────────
 async function handleSettings(chatId, user) {
   const freshUser = await getUser(String(chatId));
-  await bot.sendMessage(
-  chatId,
-  `⚙️ *ACCOUNT SETTINGS*\n` +
-  `━━━━━━━━━━━━━━━━━━\n\n` +
-
-  `👤 Name : *${freshUser.name || 'Not Set'}*\n` +
-  `📱 Mobile : *${freshUser.mobile || 'Not Set'}*\n` +
-  `🏦 Bank A/C : *${freshUser.bank_account || 'Not Set'}*\n` +
-  `💳 UPI ID : *${freshUser.upi_id || 'Not Set'}*\n\n` +
-
-  `━━━━━━━━━━━━━━━━━━\n` +
-  `Choose option below to update 👇`,
-  {
-    parse_mode: 'Markdown',
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '👤 Update Name', callback_data: 'set_name' }],
-        [{ text: '📱 Update Mobile', callback_data: 'set_mobile' }],
-        [{ text: '💳 Update UPI ID', callback_data: 'set_upi' }],
-        [{ text: '🏦 Update Bank Account', callback_data: 'set_bank' }]
-      ]
-    }
-  }
-);
-
+  await bot.sendMessage(chatId,
+    `⚙️ *ACCOUNT SETTINGS*\n━━━━━━━━━━━━━━━━━━\n\n` +
+    `👤 Name : *${freshUser.name || 'Not Set'}*\n` +
+    `📱 Mobile : *${freshUser.mobile || 'Not Set'}*\n` +
+    `🏦 Bank A/C : *${freshUser.bank_account || 'Not Set'}*\n` +
+    `💳 UPI ID : *${freshUser.upi_id || 'Not Set'}*\n\n` +
+    `━━━━━━━━━━━━━━━━━━\nChoose option below to update 👇`,
+    { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [
+      [{ text: '👤 Update Name',        callback_data: 'set_name'   }],
+      [{ text: '📱 Update Mobile',      callback_data: 'set_mobile' }],
+      [{ text: '💳 Update UPI ID',      callback_data: 'set_upi'   }],
+      [{ text: '🏦 Update Bank Account',callback_data: 'set_bank'  }]
+    ]}}
+  );
 }
 
 module.exports = { bot, sessions };
