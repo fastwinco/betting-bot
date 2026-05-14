@@ -15,7 +15,7 @@ async function send(chatId, text, opts = {}) {
 
 async function getUser(telegramId) {
   const [rows] = await db.query(
-    'SELECT * FROM users WHERE whatsapp_number = ? AND status = ?',
+    'SELECT * FROM users WHERE telegram_id = ? AND status = ?',
     [String(telegramId), 'active']
   );
   return rows[0] || null;
@@ -222,7 +222,7 @@ bot.on('message', async (msg) => {
       await send(chatId, '❌ Enter valid 10 digit mobile number');
       return;
     }
-    await db.query('UPDATE users SET mobile=? WHERE whatsapp_number=?', [mobile, String(chatId)]);
+    await db.query('UPDATE users SET mobile=? WHERE telegram_id=?', [mobile, String(chatId)]);
     delete sessions[chatId];
     await send(chatId, '✅ Registration completed', MAIN_MENU);
     return;
@@ -233,7 +233,7 @@ bot.on('message', async (msg) => {
       await send(chatId, '❌ Enter valid 10 digit mobile number');
       return;
     }
-    await db.query('UPDATE users SET mobile=? WHERE whatsapp_number=?', [text, String(chatId)]);
+    await db.query('UPDATE users SET mobile=? WHERE telegram_id=?', [text, String(chatId)]);
     delete sessions[chatId];
     await send(chatId, '✅ Mobile number updated successfully', MAIN_MENU);
     return;
@@ -249,7 +249,7 @@ bot.on('message', async (msg) => {
   if (session?.step === 'ask_upi') {
     if (!text.includes('@')) { await send(chatId, '❌ Invalid UPI ID.\nExample: name@ybl'); return; }
     await db.query(
-      `INSERT INTO users (whatsapp_number, name, upi_id, wallet_balance, status, registered_at) VALUES (?, ?, ?, 0, 'active', NOW())`,
+      `INSERT INTO users (telegram_id, name, upi_id, wallet_balance, status, registered_at) VALUES (?, ?, ?, 0, 'active', NOW())`,
       [String(chatId), session.name, text.toLowerCase()]
     );
     sessions[chatId] = { step: 'register_mobile' };
