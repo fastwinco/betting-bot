@@ -3,7 +3,7 @@ const db = require('../../database');
 async function handle(sock, jid, phone, sessions) {
   // Pehle check karo already registered toh nahi
   const [existing] = await db.query(
-    'SELECT * FROM users WHERE whatsapp_number = ?', [phone]
+    'SELECT * FROM users WHERE telegram_id = ?', [phone]
   );
 
   if (existing.length > 0) {
@@ -62,7 +62,7 @@ async function handleStep(sock, jid, phone, text, sessions) {
 
     // Database mein save karo
     await db.query(
-      `INSERT INTO users (whatsapp_number, name, upi_id, wallet_balance, status, registered_at)
+      `INSERT INTO users (telegram_id, name, upi_id, wallet_balance, status, registered_at)
        VALUES (?, ?, ?, 0, 'active', NOW())`,
       [phone, name, upiId]
     );
